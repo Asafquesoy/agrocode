@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CULTIVOS } from "../../core/tipos";
 import type { Expr, Programa, Regla } from "../../core/ast";
+import { declaracionesUsadas } from "../../core/ast";
 import { recetaParaCultivo } from "./recetas";
 import { AsistenteNuevaRegla } from "./AsistenteNuevaRegla";
 import { PanelSalida } from "../../componentes/PanelSalida";
@@ -9,12 +10,19 @@ import "./RecetaPropuesta.css";
 
 // La receta usa Comparacion directa o Logica(Comparacion, Comparacion).
 // Para el slider, siempre editamos el valor de la primera comparación que aparezca.
+// El slider solo tiene sentido cuando el lado derecho es un Literal (un número);
+// las recetas pre-armadas siempre lo son, pero el AST también admite referencias
+// a otro SENSOR/ACTUADOR (ver ast.ts), que el slider no sabe editar.
 function valorEditable(expr: Expr): number {
-  return expr.clase === "Comparacion" ? expr.derecha.valor : valorEditable(expr.izquierda);
+  if (expr.clase === "Comparacion") {
+    return expr.derecha.clase === "Literal" ? expr.derecha.valor : 0;
+  }
+  return valorEditable(expr.izquierda);
 }
 
 function conValorActualizado(expr: Expr, nuevoValor: number): Expr {
   if (expr.clase === "Comparacion") {
+    if (expr.derecha.clase !== "Literal") return expr;
     return { ...expr, derecha: { ...expr.derecha, valor: nuevoValor } };
   }
   return { ...expr, izquierda: conValorActualizado(expr.izquierda, nuevoValor) };
@@ -43,11 +51,19 @@ export function RecetaPropuesta() {
   }
 
   function eliminarRegla(reglaId: string) {
-    setPrograma((prev) => (prev ? { ...prev, reglas: prev.reglas.filter((r) => r.id !== reglaId) } : prev));
+    setPrograma((prev) => {
+      if (!prev) return prev;
+      const reglas = prev.reglas.filter((r) => r.id !== reglaId);
+      return { ...prev, reglas, declaraciones: declaracionesUsadas(reglas) };
+    });
   }
 
   function agregarRegla(regla: Regla) {
-    setPrograma((prev) => (prev ? { ...prev, reglas: [...prev.reglas, regla] } : prev));
+    setPrograma((prev) => {
+      if (!prev) return prev;
+      const reglas = [...prev.reglas, regla];
+      return { ...prev, reglas, declaraciones: declaracionesUsadas(reglas) };
+    });
     setMostrarAsistente(false);
   }
 

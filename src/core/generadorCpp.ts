@@ -1,16 +1,19 @@
 // AST -> sketch .ino para ESP32 (Arduino framework).
 // Solo se invoca sobre programas que ya pasaron verificarPrograma() sin errores.
-import type { Expr, Programa, Regla, Sentencia } from "./ast";
-import { ACTUADORES, buscarActuador, buscarCultivo, buscarSensor, SENSORES } from "./tipos";
-import { programaValido, verificarPrograma } from "./analizadorTipos";
+import type { Expr, Programa, Regla, Sentencia } from "./ast.ts";
+import { ACTUADORES, buscarActuador, buscarCultivo, buscarSensor, SENSORES } from "./tipos.ts";
+import { programaValido, verificarPrograma } from "./analizadorTipos.ts";
 
 function pinesUsados(programa: Programa) {
   const sensoresUsados = new Set<string>();
   const actuadoresUsados = new Set<string>();
 
   const visitarExpr = (e: Expr) => {
-    if (e.clase === "Comparacion") sensoresUsados.add(e.izquierda.sensor);
-    else {
+    if (e.clase === "Comparacion") {
+      sensoresUsados.add(e.izquierda.sensor);
+      if (e.derecha.clase === "RefSensor") sensoresUsados.add(e.derecha.sensor);
+      if (e.derecha.clase === "RefActuador") actuadoresUsados.add(e.derecha.actuador);
+    } else {
       visitarExpr(e.izquierda);
       visitarExpr(e.derecha);
     }
@@ -47,6 +50,12 @@ function exprACpp(nodo: Expr): string {
   if (nodo.clase === "Comparacion") {
     const sensor = buscarSensor(nodo.izquierda.sensor);
     const variable = `lectura_${sensor?.id ?? nodo.izquierda.sensor}`;
+    // El analizador de tipos (verificarPrograma, llamado más abajo) ya garantiza
+    // que solo llegan comparaciones SENSOR-vs-número: si derecha no es Literal
+    // el programa nunca pasa el gate de generarCpp().
+    if (nodo.derecha.clase !== "Literal") {
+      throw new Error(`Comparación no soportada en C++: ${variable} contra un identificador, no un número.`);
+    }
     return `${variable} ${operadorCpp(nodo.operador)} ${nodo.derecha.valor}`;
   }
   const op = nodo.operador === "Y" ? "&&" : "||";
@@ -76,7 +85,7 @@ export function generarCpp(programa: Programa): string {
   if (!programaValido(programa)) {
     const detalle = resultados
       .filter((r) => r.errores.length > 0)
-      .map((r) => `  - ${r.reglaId}: ${r.errores.join("; ")}`)
+      .map((r) => `  - ${r.reglaId}: ${r.errores.map((e) => `[${e.regla}] ${e.mensaje}`).join("; ")}`)
       .join("\n");
     throw new Error(`No se puede generar código: hay errores de tipos.\n${detalle}`);
   }

@@ -1,7 +1,7 @@
 // Recetas pre-armadas por cultivo: el AST ya está construido y verificado.
 // El agricultor no arma la regla desde cero, la reconoce y ajusta con sliders.
 import type { Programa, Regla } from "../../core/ast";
-import { accionEstado, comparacion, logica } from "../../core/ast";
+import { accionEstado, comparacion, declaracionesUsadas, logica } from "../../core/ast";
 import { buscarCultivo, CULTIVOS, type DefinicionCultivo } from "../../core/tipos";
 
 function recetaBase(cultivo: DefinicionCultivo): Regla[] {
@@ -30,5 +30,6 @@ function recetaBase(cultivo: DefinicionCultivo): Regla[] {
 
 export function recetaParaCultivo(cultivoId: string): Programa {
   const cultivo = buscarCultivo(cultivoId) ?? CULTIVOS[0];
-  return { cultivo: cultivo.id, reglas: recetaBase(cultivo) };
+  const reglas = recetaBase(cultivo);
+  return { cultivo: cultivo.id, declaraciones: declaracionesUsadas(reglas), reglas };
 }

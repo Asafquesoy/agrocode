@@ -129,3 +129,27 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+.panel-salida__advertencias {
+  margin-top: 0.35rem;
+  color: var(--ambar);
+  opacity: 0.85;
+}
+
+.panel-salida__escribir {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.panel-salida__textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: var(--fuente-mono);
+  font-size: 0.85rem;
+  background: var(--verde-noche);
+  color: var(--lima-claro);
+  border: 1px solid var(--verde-bosque);
+  border-radius: 8px;
+  padding: 0.7rem;
+}
