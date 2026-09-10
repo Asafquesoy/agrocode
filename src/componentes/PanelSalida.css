@@ -1,0 +1,131 @@
+.panel-salida {
+  border: 1px solid var(--verde-bosque);
+  border-radius: 12px;
+  background: var(--verde-noche);
+  color: var(--lima-claro);
+  overflow: hidden;
+  box-shadow: var(--sombra-fuerte);
+}
+
+.panel-salida--vacio {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-texto-mute);
+  background: var(--color-tarjeta);
+  border: 1px dashed var(--color-borde);
+  box-shadow: none;
+}
+
+.panel-salida__pestanas {
+  display: flex;
+  background: var(--verde-bosque);
+}
+
+.panel-salida__pestanas button {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #9db991;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  position: relative;
+  transition: color 0.15s ease;
+}
+
+.panel-salida__pestanas button.activa {
+  color: var(--lima);
+}
+
+.panel-salida__pestanas button.activa::after {
+  content: "";
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 0;
+  height: 2px;
+  background: var(--lima);
+  border-radius: 2px 2px 0 0;
+}
+
+.panel-salida__contenido {
+  padding: 1.1rem 1.25rem;
+  min-height: 180px;
+  max-height: 340px;
+  overflow: auto;
+  color: var(--lima-claro);
+}
+
+.panel-salida__codigo {
+  margin: 0;
+  font-family: var(--fuente-mono);
+  font-size: 0.85rem;
+  color: var(--lima-claro);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-salida__linea {
+  white-space: pre-wrap;
+  counter-increment: linea;
+  padding-left: 2.2em;
+  position: relative;
+}
+
+.panel-salida__linea::before {
+  content: counter(linea);
+  position: absolute;
+  left: 0;
+  width: 1.8em;
+  text-align: right;
+  color: #3d6a45;
+}
+
+.panel-salida__codigo {
+  counter-reset: linea;
+}
+
+.panel-salida__lista-tipos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  font-family: var(--fuente-texto);
+}
+
+.panel-salida__lista-tipos li {
+  padding-left: 0.8rem;
+  border-left: 3px solid transparent;
+}
+
+.panel-salida__lista-tipos li.ok {
+  border-left-color: var(--lima);
+  color: var(--crema);
+}
+
+.panel-salida__lista-tipos li.error {
+  border-left-color: var(--ambar);
+  color: #f2c9a8;
+}
+
+.panel-salida__lista-tipos li strong {
+  display: block;
+  font-family: var(--fuente-mono);
+  font-size: 0.9rem;
+}
+
+.panel-salida__bloqueo {
+  color: #f2c9a8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

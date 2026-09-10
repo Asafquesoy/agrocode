@@ -1,0 +1,144 @@
+/* Tokens y fundamentos visuales de Agrocode.
+   Paleta muestreada de logo.png: verde-noche de la pantalla del laptop,
+   verde-bosque del aro exterior, lima del código en pantalla, crema del aro blanco. */
+
+:root {
+  --fuente-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --fuente-texto: "Instrument Sans Variable", -apple-system, "Segoe UI", sans-serif;
+  --fuente-mono: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+
+  --verde-noche: #0e2e19;
+  --verde-bosque: #14401f;
+  --verde-bandera: #1e6b32;
+  --verde-hoja: #4fa83d;
+  --lima: #a8dc3c;
+  --lima-claro: #d6f05a;
+  --crema: #f5f2e6;
+  --crema-hueso: #eae5d2;
+  --tierra: #6b5a3e;
+  --ambar: #c8842a;
+  --ladrillo: #9c3a28;
+
+  /* Roles semánticos (lienzo claro) */
+  --color-fondo: var(--crema);
+  --color-superficie: #fffdf6;
+  --color-tarjeta: var(--crema-hueso);
+  --color-borde: #d8cfae;
+  --color-borde-suave: #e4ddc4;
+  --color-texto: #23301f;
+  --color-texto-mute: var(--tierra);
+  --color-acento: var(--verde-bandera);
+  --color-acento-oscuro: var(--verde-bosque);
+  --color-acento-fondo: #e4efd9;
+  --color-error: var(--ladrillo);
+  --color-error-fondo: #f7e6e0;
+  --color-error-borde: #e3bda9;
+  --color-advertencia: var(--ambar);
+
+  --sombra-suave: 0 1px 2px rgba(20, 64, 31, 0.06), 0 8px 24px -12px rgba(20, 64, 31, 0.18);
+  --sombra-fuerte: 0 2px 4px rgba(14, 46, 25, 0.12), 0 16px 32px -14px rgba(14, 46, 25, 0.32);
+
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  font-family: var(--fuente-texto);
+  font-size: 17px;
+  line-height: 1.6;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fondo: var(--verde-noche);
+    --color-superficie: #16391f;
+    --color-tarjeta: #1a4126;
+    --color-borde: #2c5535;
+    --color-borde-suave: #234a2b;
+    --color-texto: var(--crema);
+    --color-texto-mute: #b9c9ac;
+    --color-acento: var(--lima);
+    --color-acento-oscuro: var(--lima-claro);
+    --color-acento-fondo: #234a2b;
+    --color-error: #e08a71;
+    --color-error-fondo: #3a1f19;
+    --color-error-borde: #5c3226;
+    --color-advertencia: #e0ac5a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  /* Grano sutil: evita el plano de color liso sin recurrir a imágenes externas. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fuente-display);
+  font-weight: 600;
+  color: var(--color-acento-oscuro);
+}
+
+input,
+button,
+select {
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--color-texto);
+}
+
+select,
+input[type="text"],
+input[type="number"],
+input[type="time"] {
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+/* Botones sin clase propia deben seguir el tema en vez del gris por defecto del navegador. */
+button {
+  cursor: pointer;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lima);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
