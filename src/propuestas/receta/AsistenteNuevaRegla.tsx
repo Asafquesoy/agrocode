@@ -14,7 +14,19 @@ import {
   refSensor,
 } from "../../core/ast";
 import { verificarPrograma } from "../../core/analizadorTipos";
-import { ICONOS_ACTUADOR, IconoAlarma, IconoFlecha, IconoGota, IconoReloj, IconoValvula, IconoVerificado, IconoAdvertencia } from "../../componentes/Iconos";
+import {
+  ICONOS_ACTUADOR,
+  IconoAlarma,
+  IconoCheck,
+  IconoFlecha,
+  IconoGota,
+  IconoMarca,
+  IconoReloj,
+  IconoValvula,
+  IconoVerificado,
+  IconoAdvertencia,
+} from "../../componentes/Iconos";
+import "./AsistenteNuevaRegla.css";
 
 type Paso = "CUANDO" | "QUE_HAGO" | "CUANTO_TIEMPO" | "RESUMEN";
 
@@ -235,7 +247,11 @@ export function AsistenteNuevaRegla({
   const [paso, setPaso] = useState<Paso>("CUANDO");
   const [estado, setEstado] = useState<EstadoAsistente>(estadoInicial);
 
-  const pasoActualIdx = PASOS.findIndex((p) => p.id === paso);
+  // El paso CUANTO_TIEMPO solo existe cuando la acción elegida es "esperar";
+  // el indicador de progreso debe contar 3 o 4 pasos según corresponda, no
+  // siempre 4.
+  const pasosVisibles = PASOS.filter((p) => p.id !== "CUANTO_TIEMPO" || estado.tipoAccion === "TIEMPO");
+  const pasoActualIdx = pasosVisibles.findIndex((p) => p.id === paso);
 
   const reglaCandidata = useMemo<Regla>(() => {
     const cond1 = construirComparacion(estado.condicion);
@@ -287,10 +303,12 @@ export function AsistenteNuevaRegla({
   return (
     <div className="asistente">
       <ol className="asistente__progreso">
-        {PASOS.map((p, i) => (
+        {pasosVisibles.map((p, i) => (
           <li key={p.id} className={i === pasoActualIdx ? "actual" : i < pasoActualIdx ? "completado" : "pendiente"}>
-            <span className="asistente__progreso-circulo">{i < pasoActualIdx ? "✓" : i + 1}</span>
-            <span className="asistente__progreso-etiqueta">{p.etiqueta}</span>
+            <span className="asistente__progreso-circulo">{i < pasoActualIdx ? <IconoCheck size={12} /> : i + 1}</span>
+            <span className="asistente__progreso-etiqueta">
+              Paso {i + 1} de {pasosVisibles.length} · {p.etiqueta}
+            </span>
           </li>
         ))}
       </ol>
@@ -318,7 +336,7 @@ export function AsistenteNuevaRegla({
             </div>
           ) : (
             <button className="asistente__agregar-condicion" onClick={() => setEstado((s) => ({ ...s, usarSegundaCondicion: true }))}>
-              + Agregar otra condición (Y / O)
+              <IconoMarca size={14} /> Agregar otra condición (Y / O)
             </button>
           )}
 

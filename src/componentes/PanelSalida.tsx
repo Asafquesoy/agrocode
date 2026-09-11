@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { Programa } from "../core/ast";
 import type { ErrorSemantico } from "../core/errores";
 import { verificarPrograma, type ResultadoReglaAnalisis } from "../core/analizadorTipos";
 import { programaATexto } from "../core/lenguaje";
 import { parsearPrograma } from "../core/parser";
 import { generarCpp } from "../core/generadorCpp";
-import { IconoAdvertencia, IconoVerificado } from "./Iconos";
+import { IconoAdvertencia } from "./Iconos";
+import { LineaCpp, LineaLenguaje } from "./ResaltadoCodigo";
 import { PanelEvidencia } from "./PanelEvidencia";
 import "./PanelSalida.css";
 
@@ -13,6 +14,10 @@ type Pestana = "lenguaje" | "tipos" | "cpp" | "escribir" | "evidencia";
 
 function hayErroresBloqueantes(analisis: ResultadoReglaAnalisis[]): boolean {
   return analisis.some((r) => r.errores.some((e) => e.categoria !== "ADVERTENCIA"));
+}
+
+function contarErrores(analisis: ResultadoReglaAnalisis[]): number {
+  return analisis.reduce((total, r) => total + r.errores.filter((e) => e.categoria !== "ADVERTENCIA").length, 0);
 }
 
 // Diagnóstico de una regla en el formato que pide la Actividad 5:
@@ -26,11 +31,13 @@ function ListaDiagnostico({ analisis }: { analisis: ResultadoReglaAnalisis[] }) 
         const advertencias = r.errores.filter((e: ErrorSemantico) => e.categoria === "ADVERTENCIA");
         return (
           <li key={r.reglaId} className={errores.length ? "error" : "ok"}>
-            <strong>{r.reglaId}</strong>
+            <div className="panel-salida__diag-cabecera">
+              <span className="panel-salida__diag-etiqueta">{errores.length ? "Error" : "Bien"}</span>
+              <strong>{r.reglaId}</strong>
+            </div>
             {errores.length === 0 && (
               <span>
-                {" "}
-                — Expresión válida. Tipos compatibles.
+                Expresión válida. Tipos compatibles.
                 {r.tipoInferido && (
                   <>
                     {" "}
@@ -44,7 +51,7 @@ function ListaDiagnostico({ analisis }: { analisis: ResultadoReglaAnalisis[] }) 
               <ul>
                 {errores.map((err, i) => (
                   <li key={i}>
-                    <strong>ERROR SEMÁNTICO [{err.categoria}]</strong> — {err.mensaje}{" "}
+                    <strong>[{err.categoria}]</strong> — {err.mensaje}{" "}
                     <em>
                       (regla {err.regla}
                       {err.linea ? `, línea ${err.linea}` : ""})
@@ -57,7 +64,7 @@ function ListaDiagnostico({ analisis }: { analisis: ResultadoReglaAnalisis[] }) 
               <ul className="panel-salida__advertencias">
                 {advertencias.map((adv, i) => (
                   <li key={i}>
-                    ADVERTENCIA — {adv.mensaje} <em>(regla {adv.regla})</em>
+                    AVISO — {adv.mensaje} <em>(regla {adv.regla})</em>
                   </li>
                 ))}
               </ul>
@@ -66,6 +73,19 @@ function ListaDiagnostico({ analisis }: { analisis: ResultadoReglaAnalisis[] }) 
         );
       })}
     </ul>
+  );
+}
+
+function BloqueCodigo({ lineas, resaltar }: { lineas: string[]; resaltar: (texto: string) => ReactNode }) {
+  return (
+    <pre className="panel-salida__codigo">
+      {lineas.map((linea, i) => (
+        <span key={i} className="panel-salida__linea">
+          <span className="panel-salida__num">{i + 1}</span>
+          <span className="panel-salida__texto">{resaltar(linea) || " "}</span>
+        </span>
+      ))}
+    </pre>
   );
 }
 
@@ -106,6 +126,14 @@ function PestanaEscribir() {
   );
 }
 
+const PESTANAS: { id: Pestana; etiqueta: string }[] = [
+  { id: "lenguaje", etiqueta: "Lenguaje" },
+  { id: "tipos", etiqueta: "Análisis" },
+  { id: "cpp", etiqueta: "C++ (ESP32)" },
+  { id: "escribir", etiqueta: "Escribir" },
+  { id: "evidencia", etiqueta: "Evidencia" },
+];
+
 export function PanelSalida({
   programa,
   onCargarPrograma,
@@ -119,6 +147,7 @@ export function PanelSalida({
   // Solo los errores bloqueantes impiden generar C++; una ADVERTENCIA (p. ej.
   // un sensor declarado y nunca usado) se muestra pero no bloquea nada.
   const hayErrores = hayErroresBloqueantes(analisis);
+  const totalErrores = contarErrores(analisis);
 
   const textoLenguaje = useMemo(() => {
     if (!programa) return "";
@@ -141,39 +170,38 @@ export function PanelSalida({
   const lineasLenguaje = textoLenguaje.split("\n");
   const lineasCpp = textoCpp.split("\n");
 
+  const reglasAplicadas = useMemo(() => [...new Set(analisis.flatMap((r) => r.reglasAplicadas))], [analisis]);
+
   return (
     <div className="panel-salida">
       <div className="panel-salida__pestanas">
-        <button className={pestana === "lenguaje" ? "activa" : ""} onClick={() => setPestana("lenguaje")} disabled={!programa}>
-          Lenguaje
-        </button>
-        <button className={pestana === "tipos" ? "activa" : ""} onClick={() => setPestana("tipos")} disabled={!programa}>
-          Análisis de tipos {programa && (hayErrores ? <IconoAdvertencia size={15} /> : <IconoVerificado size={15} />)}
-        </button>
-        <button className={pestana === "cpp" ? "activa" : ""} onClick={() => setPestana("cpp")} disabled={!programa}>
-          C++ (ESP32)
-        </button>
-        <button className={pestana === "escribir" ? "activa" : ""} onClick={() => setPestana("escribir")}>
-          Escribir
-        </button>
-        <button className={pestana === "evidencia" ? "activa" : ""} onClick={() => setPestana("evidencia")}>
-          Evidencia
-        </button>
+        {PESTANAS.map((p) => {
+          const deshabilitada = !programa && p.id !== "escribir" && p.id !== "evidencia";
+          return (
+            <button
+              key={p.id}
+              className={pestana === p.id ? "activa" : ""}
+              onClick={() => setPestana(p.id)}
+              disabled={deshabilitada}
+            >
+              {p.etiqueta}
+              {p.id === "tipos" && programa && (
+                <span className={`panel-salida__badge ${hayErrores ? "panel-salida__badge--error" : ""}`}>{totalErrores}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="panel-salida__contenido">
         {!programa && pestana !== "escribir" && pestana !== "evidencia" && (
-          <p>Arma una regla para ver aquí el lenguaje, el análisis de tipos y el código C++ — o prueba la pestaña "Escribir".</p>
+          <p className="panel-salida__vacio">
+            Arma una regla para ver aquí el lenguaje, el análisis de tipos y el código C++ — o prueba la pestaña "Escribir".
+          </p>
         )}
 
         {programa && pestana === "lenguaje" && (
-          <pre className="panel-salida__codigo">
-            {lineasLenguaje.map((linea, i) => (
-              <span key={i} className="panel-salida__linea">
-                {linea}
-              </span>
-            ))}
-          </pre>
+          <BloqueCodigo lineas={lineasLenguaje} resaltar={(t) => <LineaLenguaje texto={t} />} />
         )}
 
         {programa && pestana === "tipos" && <ListaDiagnostico analisis={analisis} />}
@@ -184,19 +212,24 @@ export function PanelSalida({
               <IconoAdvertencia size={16} /> Corrige los errores de tipos antes de generar el código para el ESP32.
             </p>
           ) : (
-            <pre className="panel-salida__codigo">
-              {lineasCpp.map((linea, i) => (
-                <span key={i} className="panel-salida__linea">
-                  {linea}
-                </span>
-              ))}
-            </pre>
+            <BloqueCodigo lineas={lineasCpp} resaltar={(t) => <LineaCpp texto={t} />} />
           ))}
 
         {pestana === "escribir" && <PestanaEscribir />}
 
         {pestana === "evidencia" && <PanelEvidencia onCargarPrograma={onCargarPrograma} />}
       </div>
+
+      {programa && (
+        <div className={`panel-salida__pie ${hayErrores ? "panel-salida__pie--error" : ""}`}>
+          <span>{hayErrores ? `${totalErrores} error${totalErrores === 1 ? "" : "es"}` : "Sin errores"}</span>
+          {reglasAplicadas.length > 0 && (
+            <span>
+              reglas aplicadas: <span className="panel-salida__pie-codigo">{reglasAplicadas.join(" ")}</span>
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

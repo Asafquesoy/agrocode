@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { CULTIVOS } from "../../core/tipos";
 import type { Expr, Programa, Regla } from "../../core/ast";
 import { declaracionesUsadas } from "../../core/ast";
+import { verificarPrograma } from "../../core/analizadorTipos";
 import { recetaParaCultivo } from "./recetas";
 import { AsistenteNuevaRegla } from "./AsistenteNuevaRegla";
 import { PanelSalida } from "../../componentes/PanelSalida";
@@ -34,6 +35,16 @@ export function RecetaPropuesta() {
   const [mostrarAsistente, setMostrarAsistente] = useState(false);
 
   const cultivoInfo = useMemo(() => CULTIVOS.find((c) => c.id === cultivo), [cultivo]);
+
+  // Barra de estado inferior, estilo salida de compilador: reusa el mismo
+  // verificarPrograma que consulta PanelSalida — nada se recalcula a mano.
+  const estadoCompilacion = useMemo(() => {
+    if (!programa) return null;
+    const analisis = verificarPrograma(programa);
+    const errores = analisis.flatMap((r) => r.errores.filter((e) => e.categoria !== "ADVERTENCIA"));
+    const reglasAplicadas = [...new Set(analisis.flatMap((r) => r.reglasAplicadas))];
+    return { errores: errores.length, reglasAplicadas };
+  }, [programa]);
 
   function elegirCultivo(id: string) {
     setCultivo(id);
@@ -80,7 +91,7 @@ export function RecetaPropuesta() {
     return (
       <div className="receta-propuesta">
         <p className="receta-propuesta__intro">
-          Elige tu cultivo. Te dejamos las reglas de riego ya listas; tú solo las ajustas.
+          Elige tu cultivo.
         </p>
         <div className="receta-propuesta__cultivos">
           {CULTIVOS.map((c, i) => {
@@ -92,7 +103,7 @@ export function RecetaPropuesta() {
                 style={{ "--i": i } as React.CSSProperties}
                 onClick={() => elegirCultivo(c.id)}
               >
-                <Icono size={36} className="receta-propuesta__icono" />
+                <Icono size={30} className="receta-propuesta__icono" />
                 <span className="receta-propuesta__cultivo-nombre">{c.etiqueta}</span>
                 <span className="receta-propuesta__cultivo-rango">
                   humedad ideal {c.humedadMinima}–{c.humedadMaxima}%
@@ -113,7 +124,7 @@ export function RecetaPropuesta() {
             <span className="receta-propuesta__cabecera-icono">
               {(() => {
                 const Icono = ICONOS_CULTIVO[cultivoInfo.icono];
-                return <Icono size={22} />;
+                return <Icono size={18} />;
               })()}
             </span>
           )}
@@ -122,45 +133,70 @@ export function RecetaPropuesta() {
         <button onClick={() => setCultivo(null)}>Cambiar cultivo</button>
       </div>
 
-      <div className="receta-propuesta__reglas">
-        {programa.reglas.map((regla, i) => {
-          const valor = valorEditable(regla.condicion);
-          return (
-            <div key={regla.id} className="receta-propuesta__regla" style={{ "--i": i } as React.CSSProperties}>
-              <div className="receta-propuesta__regla-cabecera">
-                <span className="receta-propuesta__regla-numero">{String(i + 1).padStart(2, "0")}</span>
-                <span className="receta-propuesta__regla-nombre">{regla.nombre}</span>
-                <button onClick={() => eliminarRegla(regla.id)} aria-label="Quitar esta regla" className="receta-propuesta__quitar">
-                  <IconoQuitar size={18} />
-                </button>
-              </div>
-              <div className="receta-propuesta__regla-cuerpo">
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={valor}
-                  className="receta-propuesta__slider"
-                  style={{ "--relleno": `${valor}%` } as React.CSSProperties}
-                  onChange={(e) => ajustarUmbral(regla.id, Number(e.target.value))}
-                />
-                <span className="receta-propuesta__valor">{valor}%</span>
-              </div>
-            </div>
-          );
-        })}
+      <div className="receta-propuesta__layout">
+        <div className="receta-propuesta__panel-izq">
+          <p className="receta-propuesta__panel-titulo">Mi receta</p>
+          <div className="receta-propuesta__reglas">
+            {programa.reglas.map((regla, i) => {
+              const valor = valorEditable(regla.condicion);
+              return (
+                <div key={regla.id} className="receta-propuesta__regla" style={{ "--i": i } as React.CSSProperties}>
+                  <div className="receta-propuesta__regla-cabecera">
+                    <span className="receta-propuesta__regla-numero">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="receta-propuesta__regla-nombre">{regla.nombre}</span>
+                    <button onClick={() => eliminarRegla(regla.id)} aria-label="Quitar esta regla" className="receta-propuesta__quitar">
+                      <IconoQuitar size={16} />
+                    </button>
+                  </div>
+                  <div className="receta-propuesta__regla-cuerpo">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={valor}
+                      className="receta-propuesta__slider"
+                      style={{ "--relleno": `${valor}%` } as React.CSSProperties}
+                      onChange={(e) => ajustarUmbral(regla.id, Number(e.target.value))}
+                    />
+                    <span className="receta-propuesta__valor">{valor}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {mostrarAsistente ? (
+            <AsistenteNuevaRegla cultivoId={cultivo} onCompletar={agregarRegla} onCancelar={() => setMostrarAsistente(false)} />
+          ) : (
+            <button className="receta-propuesta__agregar" onClick={() => setMostrarAsistente(true)}>
+              <IconoMarca size={16} />
+              Nueva regla
+            </button>
+          )}
+        </div>
+
+        <div className="receta-propuesta__panel-der">
+          <PanelSalida programa={programa} onCargarPrograma={cargarProgramaDeCaso} />
+        </div>
       </div>
 
-      {mostrarAsistente ? (
-        <AsistenteNuevaRegla cultivoId={cultivo} onCompletar={agregarRegla} onCancelar={() => setMostrarAsistente(false)} />
-      ) : (
-        <button className="receta-propuesta__agregar" onClick={() => setMostrarAsistente(true)}>
-          <IconoMarca size={18} />
-          Agregar una regla nueva
-        </button>
+      {estadoCompilacion && (
+        <div className={`receta-propuesta__estado ${estadoCompilacion.errores > 0 ? "receta-propuesta__estado--error" : ""}`}>
+          <span>
+            {estadoCompilacion.errores > 0
+              ? `${estadoCompilacion.errores} error${estadoCompilacion.errores === 1 ? "" : "es"}`
+              : "Sin errores"}
+          </span>
+          <span>
+            {programa.reglas.length} regla{programa.reglas.length === 1 ? "" : "s"}
+          </span>
+          {estadoCompilacion.reglasAplicadas.length > 0 && (
+            <span>
+              reglas aplicadas: <span className="receta-propuesta__estado-codigo">{estadoCompilacion.reglasAplicadas.join(" ")}</span>
+            </span>
+          )}
+        </div>
       )}
-
-      <PanelSalida programa={programa} onCargarPrograma={cargarProgramaDeCaso} />
     </div>
   );
 }

@@ -4,12 +4,12 @@ import "./App.css";
 function App() {
   return (
     <main className="app">
-      <header className="app__cabecera">
+      <header className="app__barra">
         <div className="app__marca">
+          <span className="app__punto" aria-hidden="true" />
           <img src="/logo.png" alt="" className="app__logo" />
           <span className="app__wordmark">Agrocode</span>
         </div>
-        <p>Compilador de agricultura inteligente · El Mante</p>
       </header>
 
       <section className="app__contenido">

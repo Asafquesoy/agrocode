@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "@fontsource-variable/fraunces";
-import "@fontsource-variable/instrument-sans";
+import "@fontsource-variable/nunito";
 import "@fontsource-variable/jetbrains-mono";
 import "./estilos/base.css";
 import App from "./App";

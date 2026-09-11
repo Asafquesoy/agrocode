@@ -12,6 +12,7 @@ import { CASOS_PRUEBA, type CasoPrueba } from "../core/casosPrueba";
 import { parsearPrograma } from "../core/parser";
 import { programaATexto } from "../core/lenguaje";
 import { IconoAdvertencia, IconoVerificado } from "./Iconos";
+import "./PanelEvidencia.css";
 
 interface ResultadoCaso {
   entrada: string;
@@ -154,7 +155,7 @@ export function PanelEvidencia({ onCargarPrograma }: { onCargarPrograma?: (p: Pr
                     <td>
                       {onCargarPrograma && resultado.programa && (
                         <button className="panel-evidencia__cargar" onClick={() => onCargarPrograma(resultado.programa!)}>
-                          Cargar en mi receta
+                          Cargar ▸
                         </button>
                       )}
                     </td>

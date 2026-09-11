@@ -1,45 +1,50 @@
 .app {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 3.5rem;
+  height: 100vh;
+  width: 100%;
+  padding: 0 1.25rem 1.25rem;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
 
-.app__cabecera {
-  margin-bottom: 1.75rem;
+/* Barra de título: solo la marca. Nada de eslóganes ni nombres de finca. */
+.app__barra {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 0.25rem;
+  border-bottom: 1px solid var(--color-borde);
+  margin-bottom: 1.25rem;
 }
 
 .app__marca {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.6rem;
+}
+
+.app__punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lima);
+  animation: parpadeo 2.4s ease-in-out infinite;
 }
 
 .app__logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  box-shadow: var(--sombra-suave);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radio);
 }
 
 .app__wordmark {
   font-family: var(--fuente-display);
-  font-size: 2rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--color-acento-oscuro);
-}
-
-.app__cabecera p {
-  margin: 0.4rem 0 0 3.7rem;
-  color: var(--color-texto-mute);
-  font-size: 0.95rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-texto);
 }
 
 .app__contenido {
-  background: var(--color-superficie);
-  border-radius: 18px;
-  padding: 1.75rem;
-  border: 1px solid var(--color-borde-suave);
-  box-shadow: var(--sombra-suave);
+  min-height: 0;
+  overflow: hidden;
   color: var(--color-texto);
 }

@@ -21,7 +21,9 @@ export interface Token {
   linea: number;
 }
 
-const PALABRAS_CLAVE = new Set([
+// Exportado para que la UI (resaltado de sintaxis en PanelSalida) pinte las
+// mismas palabras clave que reconoce el lexer, sin mantener una lista aparte.
+export const PALABRAS_CLAVE = new Set([
   "CULTIVO",
   "SENSOR",
   "ACTUADOR",
