@@ -6,9 +6,10 @@ import { programaATexto } from "../core/lenguaje";
 import { parsearPrograma } from "../core/parser";
 import { generarCpp } from "../core/generadorCpp";
 import { IconoAdvertencia, IconoVerificado } from "./Iconos";
+import { PanelEvidencia } from "./PanelEvidencia";
 import "./PanelSalida.css";
 
-type Pestana = "lenguaje" | "tipos" | "cpp" | "escribir";
+type Pestana = "lenguaje" | "tipos" | "cpp" | "escribir" | "evidencia";
 
 function hayErroresBloqueantes(analisis: ResultadoReglaAnalisis[]): boolean {
   return analisis.some((r) => r.errores.some((e) => e.categoria !== "ADVERTENCIA"));
@@ -36,6 +37,7 @@ function ListaDiagnostico({ analisis }: { analisis: ResultadoReglaAnalisis[] }) 
                     Resultado: <strong>{r.tipoInferido}</strong>.
                   </>
                 )}
+                {r.reglasAplicadas.length > 0 && <> Regla aplicada: {r.reglasAplicadas.join(", ")}.</>}
               </span>
             )}
             {errores.length > 0 && (
@@ -104,7 +106,13 @@ function PestanaEscribir() {
   );
 }
 
-export function PanelSalida({ programa }: { programa: Programa | null }) {
+export function PanelSalida({
+  programa,
+  onCargarPrograma,
+}: {
+  programa: Programa | null;
+  onCargarPrograma?: (p: Programa) => void;
+}) {
   const [pestana, setPestana] = useState<Pestana>("lenguaje");
 
   const analisis = useMemo(() => (programa ? verificarPrograma(programa) : []), [programa]);
@@ -148,10 +156,13 @@ export function PanelSalida({ programa }: { programa: Programa | null }) {
         <button className={pestana === "escribir" ? "activa" : ""} onClick={() => setPestana("escribir")}>
           Escribir
         </button>
+        <button className={pestana === "evidencia" ? "activa" : ""} onClick={() => setPestana("evidencia")}>
+          Evidencia
+        </button>
       </div>
 
       <div className="panel-salida__contenido">
-        {!programa && pestana !== "escribir" && (
+        {!programa && pestana !== "escribir" && pestana !== "evidencia" && (
           <p>Arma una regla para ver aquí el lenguaje, el análisis de tipos y el código C++ — o prueba la pestaña "Escribir".</p>
         )}
 
@@ -183,6 +194,8 @@ export function PanelSalida({ programa }: { programa: Programa | null }) {
           ))}
 
         {pestana === "escribir" && <PestanaEscribir />}
+
+        {pestana === "evidencia" && <PanelEvidencia onCargarPrograma={onCargarPrograma} />}
       </div>
     </div>
   );

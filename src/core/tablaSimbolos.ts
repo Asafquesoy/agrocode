@@ -4,7 +4,35 @@
 // de identificadores" que pide la Actividad 5 (aquí hay 6, ver tabla abajo).
 import type { Declaracion, Expr, Programa, Sentencia } from "./ast.ts";
 import { buscarActuador, buscarCultivo, buscarSensor } from "./tipos.ts";
-import { errorSemantico, type ErrorSemantico } from "./errores.ts";
+import { errorSemantico, type CategoriaError, type ErrorSemantico } from "./errores.ts";
+
+export interface ReglaIdentificador {
+  id: string; // I1..I6, como en el documento "Actividad 5"
+  nombre: string;
+  categoria: CategoriaError;
+  descripcion: string;
+}
+
+// Reglas de declaración/uso de identificadores, como tabla de datos — igual
+// que MATRIZ_TIPOS en analizadorTipos.ts — para que la UI (pestaña Evidencia)
+// las liste desde una única fuente de verdad en vez de repetirlas en un
+// comentario. Los id/categoria de aquí son los que usan las llamadas a
+// errorSemantico() más abajo en este mismo archivo.
+export const REGLAS_IDENTIFICADORES: ReglaIdentificador[] = [
+  { id: "I1", nombre: "Identificador no declarado", categoria: "IDENTIFICADOR_NO_DECLARADO", descripcion: "Un SENSOR/ACTUADOR se usa en una regla sin haber sido declarado antes." },
+  { id: "I2", nombre: "Identificador redeclarado", categoria: "IDENTIFICADOR_REDECLARADO", descripcion: "El mismo identificador se declara dos veces." },
+  { id: "I3", nombre: "Identificador fuera de catálogo", categoria: "IDENTIFICADOR_NO_DECLARADO", descripcion: "Se declara un SENSOR/ACTUADOR que no existe en el catálogo del dispositivo (tipos.ts)." },
+  { id: "I4", nombre: "Uso en rol incorrecto", categoria: "USO_INCORRECTO_DE_IDENTIFICADOR", descripcion: "Un identificador declarado como SENSOR se usa como ACTUADOR, o viceversa." },
+  { id: "I5", nombre: "Cultivo inexistente", categoria: "IDENTIFICADOR_NO_DECLARADO", descripcion: "El CULTIVO del programa no existe en el catálogo de cultivos." },
+  { id: "I6", nombre: "Identificador declarado sin usar", categoria: "ADVERTENCIA", descripcion: "Un SENSOR/ACTUADOR se declara pero ninguna regla lo usa (no bloquea el C++)." },
+];
+
+// Arma el ErrorSemantico de una fila de REGLAS_IDENTIFICADORES, para que la
+// categoría nunca pueda quedar desincronizada del id (I1..I6) que se muestra.
+function errorIdentificador(id: string, mensaje: string, linea?: number): ErrorSemantico {
+  const fila = REGLAS_IDENTIFICADORES.find((r) => r.id === id);
+  return errorSemantico(fila?.categoria ?? "REGLA_MAL_FORMADA", id, mensaje, linea);
+}
 
 export type RolSimbolo = "SENSOR" | "ACTUADOR";
 
@@ -46,14 +74,7 @@ function registrarDeclaracion(decl: Declaracion, simbolos: Map<string, Simbolo>,
 
   // I2: redeclaración.
   if (simbolos.has(decl.id)) {
-    errores.push(
-      errorSemantico(
-        "IDENTIFICADOR_REDECLARADO",
-        "I2",
-        `"${decl.id}" ya fue declarado antes; no se puede declarar dos veces.`,
-        decl.linea
-      )
-    );
+    errores.push(errorIdentificador("I2", `"${decl.id}" ya fue declarado antes; no se puede declarar dos veces.`, decl.linea));
     return;
   }
 
@@ -62,8 +83,7 @@ function registrarDeclaracion(decl: Declaracion, simbolos: Map<string, Simbolo>,
   const existeEnCatalogo = rol === "SENSOR" ? buscarSensor(decl.id) : buscarActuador(decl.id);
   if (!existeEnCatalogo) {
     errores.push(
-      errorSemantico(
-        "IDENTIFICADOR_NO_DECLARADO",
+      errorIdentificador(
         "I3",
         `"${decl.id}" no existe en el catálogo de ${rol === "SENSOR" ? "sensores" : "actuadores"} del dispositivo.`,
         decl.linea
@@ -79,12 +99,7 @@ function verificarCultivo(programa: Programa, errores: ErrorSemantico[]) {
   // I5: CULTIVO debe existir en el catálogo de tipos.ts.
   if (!buscarCultivo(programa.cultivo)) {
     errores.push(
-      errorSemantico(
-        "IDENTIFICADOR_NO_DECLARADO",
-        "I5",
-        `El cultivo "${programa.cultivo}" no existe en el catálogo de cultivos.`,
-        programa.cultivoLinea
-      )
+      errorIdentificador("I5", `El cultivo "${programa.cultivo}" no existe en el catálogo de cultivos.`, programa.cultivoLinea)
     );
   }
 }
@@ -105,26 +120,14 @@ function marcarUso(
   const simbolo = simbolos.get(id);
   // I1: uso de identificador no declarado.
   if (!simbolo) {
-    errores.push(
-      errorSemantico(
-        "IDENTIFICADOR_NO_DECLARADO",
-        "I1",
-        `"${id}" se usa pero nunca fue declarado con SENSOR/ACTUADOR.`,
-        linea
-      )
-    );
+    errores.push(errorIdentificador("I1", `"${id}" se usa pero nunca fue declarado con SENSOR/ACTUADOR.`, linea));
     return;
   }
   simbolo.usado = true;
   // I4: identificador usado en un rol distinto al que fue declarado.
   if (rolEsperado && simbolo.rol !== rolEsperado) {
     errores.push(
-      errorSemantico(
-        "USO_INCORRECTO_DE_IDENTIFICADOR",
-        "I4",
-        `"${id}" fue declarado como ${simbolo.rol} pero se usa como ${rolEsperado}.`,
-        linea
-      )
+      errorIdentificador("I4", `"${id}" fue declarado como ${simbolo.rol} pero se usa como ${rolEsperado}.`, linea)
     );
   }
 }
@@ -155,14 +158,7 @@ function verificarNoUsados(simbolos: Map<string, Simbolo>, errores: ErrorSemanti
   // I6: advertencia, no bloquea la generación de C++.
   for (const simbolo of simbolos.values()) {
     if (!simbolo.usado) {
-      errores.push(
-        errorSemantico(
-          "ADVERTENCIA",
-          "I6",
-          `"${simbolo.id}" está declarado pero ninguna regla lo usa.`,
-          simbolo.linea
-        )
-      );
+      errores.push(errorIdentificador("I6", `"${simbolo.id}" está declarado pero ninguna regla lo usa.`, simbolo.linea));
     }
   }
 }

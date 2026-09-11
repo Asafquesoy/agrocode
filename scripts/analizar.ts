@@ -25,6 +25,18 @@ function leerStdin(): Promise<string> {
   });
 }
 
+// Cabecera opcional de los .agro (ver también src/core/casosPrueba.ts, que
+// lee la misma convención para la pestaña "Evidencia" de la app):
+//   // ESPERADO: VALIDO | RECHAZADO
+//   // REGLA: T1, T4
+// Si el archivo la trae, el CLI compara el resultado obtenido contra ella.
+function leerCabecera(texto: string): { esperado: "VALIDO" | "RECHAZADO"; reglaEsperada: string } | null {
+  const esperadoMatch = texto.match(/\/\/\s*ESPERADO:\s*(VALIDO|RECHAZADO)/i);
+  if (!esperadoMatch) return null;
+  const reglaMatch = texto.match(/\/\/\s*REGLA:\s*(.+)/i);
+  return { esperado: esperadoMatch[1].toUpperCase() as "VALIDO" | "RECHAZADO", reglaEsperada: reglaMatch ? reglaMatch[1].trim() : "-" };
+}
+
 function analizarTexto(nombre: string, texto: string): boolean {
   console.log(`\n=== ${nombre} ===`);
   console.log("Entrada:");
@@ -37,12 +49,23 @@ function analizarTexto(nombre: string, texto: string): boolean {
   );
   console.log("");
 
+  const cabecera = leerCabecera(texto);
+  if (cabecera) {
+    console.log(`Resultado esperado: ${cabecera.esperado} (regla: ${cabecera.reglaEsperada})`);
+  }
+
   let programa;
   try {
     programa = parsearPrograma(texto);
   } catch (e) {
     console.log(`ERROR SEMÁNTICO [REGLA_MAL_FORMADA]`);
     console.log(`  ${(e as Error).message}`);
+    console.log("\nResultado obtenido: RECHAZADO");
+    if (cabecera) {
+      const coincide = cabecera.esperado === "RECHAZADO";
+      console.log(coincide ? "✓ Coincide con lo esperado." : `✗ NO coincide con lo esperado (se esperaba ${cabecera.esperado}).`);
+      return coincide;
+    }
     return false;
   }
 
@@ -57,6 +80,7 @@ function analizarTexto(nombre: string, texto: string): boolean {
       console.log(`[${r.reglaId}] Expresión válida`);
       console.log(`  Tipos compatibles`);
       if (r.tipoInferido) console.log(`  Resultado: ${r.tipoInferido}`);
+      if (r.reglasAplicadas.length > 0) console.log(`  Regla aplicada: ${r.reglasAplicadas.join(", ")}`);
     } else {
       ok = false;
       for (const err of errores) {
@@ -70,7 +94,14 @@ function analizarTexto(nombre: string, texto: string): boolean {
     }
   }
 
-  console.log(ok ? "\nResultado obtenido: VÁLIDO" : "\nResultado obtenido: RECHAZADO");
+  const obtenido = ok ? "VALIDO" : "RECHAZADO";
+  console.log(`\nResultado obtenido: ${obtenido === "VALIDO" ? "VÁLIDO" : "RECHAZADO"}`);
+
+  if (cabecera) {
+    const coincide = obtenido === cabecera.esperado;
+    console.log(coincide ? "✓ Coincide con lo esperado." : `✗ NO coincide con lo esperado (se esperaba ${cabecera.esperado}).`);
+    return coincide;
+  }
   return ok;
 }
 

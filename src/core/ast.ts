@@ -1,6 +1,6 @@
 // AST común: la interfaz de "receta" construye este árbol. El analizador de tipos
 // y el generador de C++ solo conocen este AST, nunca la interfaz que lo produjo.
-import type { OperadorLogico, OperadorRelacional } from "./tipos.ts";
+import { buscarActuador, buscarSensor, type OperadorLogico, type OperadorRelacional } from "./tipos.ts";
 
 export interface RefSensor {
   clase: "RefSensor";
@@ -112,15 +112,33 @@ export function declaracionActuador(id: string, linea?: number): DeclaracionActu
 // Deriva las declaraciones SENSOR/ACTUADOR a partir de los identificadores
 // realmente usados en las reglas. La usan tanto recetas.ts (que no las declara
 // a mano) como lenguaje.ts (para emitir un texto que el parser pueda releer).
+//
+// El rol se decide por el catálogo (tipos.ts), NO por la posición sintáctica
+// en la que aparece el identificador: si el agricultor arma "ENCENDER
+// HUMEDAD_SUELO" (una medición, no un equipo), declararlo como ACTUADOR solo
+// porque aparece del lado de ENCENDER produciría un I3 falso (no existe como
+// actuador) en vez de los dos errores correctos y explicables — I4 (se usa en
+// un rol distinto al declarado) y T8 (ACCION_ESTADO sobre SENSOR) — que es lo
+// que un analizador semántico debe señalar. Solo si el id no existe en ningún
+// catálogo se cae de vuelta al rol posicional (para no perder identificadores
+// nuevos, todavía sin decidir por el usuario).
+function rolPorCatalogo(id: string, rolPosicional: "SENSOR" | "ACTUADOR"): "SENSOR" | "ACTUADOR" {
+  if (buscarSensor(id)) return "SENSOR";
+  if (buscarActuador(id)) return "ACTUADOR";
+  return rolPosicional;
+}
+
 export function declaracionesUsadas(reglas: Regla[]): Declaracion[] {
-  const sensores = new Set<string>();
-  const actuadores = new Set<string>();
+  const roles = new Map<string, "SENSOR" | "ACTUADOR">();
+  const marcar = (id: string, rolPosicional: "SENSOR" | "ACTUADOR") => {
+    if (!roles.has(id)) roles.set(id, rolPorCatalogo(id, rolPosicional));
+  };
 
   const visitarExpr = (e: Expr) => {
     if (e.clase === "Comparacion") {
-      sensores.add(e.izquierda.sensor);
-      if (e.derecha.clase === "RefSensor") sensores.add(e.derecha.sensor);
-      if (e.derecha.clase === "RefActuador") actuadores.add(e.derecha.actuador);
+      marcar(e.izquierda.sensor, "SENSOR");
+      if (e.derecha.clase === "RefSensor") marcar(e.derecha.sensor, "SENSOR");
+      if (e.derecha.clase === "RefActuador") marcar(e.derecha.actuador, "ACTUADOR");
     } else {
       visitarExpr(e.izquierda);
       visitarExpr(e.derecha);
@@ -129,14 +147,13 @@ export function declaracionesUsadas(reglas: Regla[]): Declaracion[] {
   for (const regla of reglas) {
     visitarExpr(regla.condicion);
     for (const accion of regla.acciones) {
-      if (accion.clase === "AccionEstado") actuadores.add(accion.actuador);
+      if (accion.clase === "AccionEstado") marcar(accion.actuador, "ACTUADOR");
     }
   }
 
-  return [
-    ...[...sensores].map((id) => declaracionSensor(id)),
-    ...[...actuadores].map((id) => declaracionActuador(id)),
-  ];
+  return [...roles.entries()].map(([id, rol]) =>
+    rol === "SENSOR" ? declaracionSensor(id) : declaracionActuador(id)
+  );
 }
 
 export function literalEntero(valor: number): Literal {
@@ -159,6 +176,15 @@ export function comparacion(
     izquierda: refSensor(sensor),
     derecha: { clase: "Literal", valor, tipo: tipoValor },
   };
+}
+
+// Variante de comparacion() que acepta cualquier Operando del lado derecho
+// (no solo un número): permite construir desde la UI las comparaciones que el
+// agricultor puede armar por error, como "HUMEDAD_SUELO < BOMBA_PRINCIPAL"
+// (T6) o "HUMEDAD_SUELO < TEMPERATURA" (T9), para que el analizador de tipos
+// las rechace con su regla real en vez de solo poder teclearlas a mano.
+export function comparacionCon(sensor: string, operador: OperadorRelacional, derecha: Operando): Comparacion {
+  return { clase: "Comparacion", operador, izquierda: refSensor(sensor), derecha };
 }
 
 export function logica(operador: OperadorLogico, izquierda: Expr, derecha: Expr): Logica {

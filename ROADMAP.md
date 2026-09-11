@@ -57,7 +57,11 @@ Decisiones fijas (no re-litigar):
       **Requiere ESP32 físico con conectividad Wi-Fi.**
 - [ ] **Fase 8 — Pulido de interfaz y empaquetado.** Layout tipo mockup del PDF, arreglar sliders
       limitados a 0–100 y edición de AST que solo recorre la rama izquierda, `tauri.conf.json` de
-      producción, build final.
+      producción, build final. Nota (evidencia Tema 1, 2026-09-10): `AsistenteNuevaRegla.tsx` ya
+      construye `Logica` (Y/O) y comparaciones contra otro identificador (`comparacionCon`), no solo
+      contra un `Literal`; la limitación de `valorEditable`/`conValorActualizado` en
+      `RecetaPropuesta.tsx` (solo recorren la rama izquierda de `Logica` y solo editan un `Literal`)
+      sigue en pie para esas reglas nuevas.
 
 Detalle completo de cada fase (archivos concretos a tocar, comandos exactos) en el plan de la sesión
 que originó este roadmap: `C:\Users\omara\.claude\plans\la-propuesta-ganadora-es-curried-pebble.md`.

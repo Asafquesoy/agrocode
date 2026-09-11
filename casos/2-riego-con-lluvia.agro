@@ -1,0 +1,13 @@
+// ESPERADO: VALIDO
+// REGLA: T1, T3, T5
+// Caso correcto: dos condiciones unidas con Y (T3) y una acción de tiempo
+// con segundos enteros positivos (T5).
+
+CULTIVO CANA;
+SENSOR HUMEDAD_SUELO;
+SENSOR LLUVIA;
+ACTUADOR BOMBA_PRINCIPAL;
+
+SI HUMEDAD_SUELO < 30 Y LLUVIA = 0
+  ENCENDER BOMBA_PRINCIPAL;
+  ESPERAR 20;

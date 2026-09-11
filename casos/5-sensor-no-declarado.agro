@@ -1,0 +1,10 @@
+// ESPERADO: RECHAZADO
+// REGLA: I1
+// Caso incorrecto: la regla usa HUMEDAD_SUELO pero nunca se declaró con
+// "SENSOR HUMEDAD_SUELO;" antes. Solo se declaró el actuador.
+
+CULTIVO CANA;
+ACTUADOR BOMBA_PRINCIPAL;
+
+SI HUMEDAD_SUELO < 30
+  ENCENDER BOMBA_PRINCIPAL;

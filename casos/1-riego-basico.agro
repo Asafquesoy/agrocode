@@ -1,0 +1,11 @@
+// ESPERADO: VALIDO
+// REGLA: T1, T4
+// Caso correcto: comparar una medición contra un número entero (T1) y
+// encender un equipo real (T4).
+
+CULTIVO CANA;
+SENSOR HUMEDAD_SUELO;
+ACTUADOR BOMBA_PRINCIPAL;
+
+SI HUMEDAD_SUELO < 30
+  ENCENDER BOMBA_PRINCIPAL;

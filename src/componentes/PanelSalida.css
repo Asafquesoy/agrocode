@@ -153,3 +153,111 @@
   border-radius: 8px;
   padding: 0.7rem;
 }
+
+/* --- Pestaña Evidencia: reglas del analizador + casos de prueba --- */
+.panel-evidencia {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.panel-evidencia h4 {
+  margin: 0 0 0.6rem;
+  color: var(--lima);
+  font-family: var(--fuente-display);
+  font-size: 1rem;
+}
+
+.panel-evidencia__tabla-scroll {
+  overflow-x: auto;
+}
+
+.panel-evidencia__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.panel-evidencia__tabla th,
+.panel-evidencia__tabla td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--verde-bosque);
+  white-space: nowrap;
+}
+
+.panel-evidencia__tabla th {
+  color: #9db991;
+  font-weight: 600;
+}
+
+.panel-evidencia__tabla--casos th,
+.panel-evidencia__tabla--casos td {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.panel-evidencia__fila-error td {
+  color: #f2c9a8;
+}
+
+.panel-evidencia__categorias {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.panel-evidencia__nota {
+  font-size: 0.8rem;
+  color: #9db991;
+  margin: 0 0 0.6rem;
+}
+
+.panel-evidencia__entrada {
+  margin: 0;
+  font-family: var(--fuente-mono);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  max-width: 22rem;
+}
+
+.panel-evidencia__badge-ok,
+.panel-evidencia__badge-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+.panel-evidencia__badge-ok {
+  color: var(--lima);
+}
+
+.panel-evidencia__badge-error {
+  color: var(--ambar);
+}
+
+.panel-evidencia__mensaje {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: #f2c9a8;
+}
+
+.panel-evidencia__cargar {
+  background: transparent;
+  border: 1px solid var(--verde-bosque);
+  color: var(--lima-claro);
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.panel-evidencia__cargar:hover {
+  border-color: var(--lima);
+  color: var(--lima);
+}

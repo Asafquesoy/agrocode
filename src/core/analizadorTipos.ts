@@ -155,11 +155,17 @@ export function verificarSentencia(nodo: Sentencia, tabla: TablaSimbolos): Resul
 export interface ResultadoReglaAnalisis {
   reglaId: string;
   tipoInferido?: TipoDato | "EJECUCION" | "PAUSA";
+  // Filas de MATRIZ_TIPOS que efectivamente se aplicaron (condición + cada
+  // acción), en orden. Se acumulan también cuando el resultado es válido —
+  // sin esto, un caso de prueba correcto no podría citar "regla aplicada:
+  // T1", que es una columna obligatoria de la evidencia.
+  reglasAplicadas: string[];
   errores: ErrorSemantico[];
 }
 
 export function verificarRegla(regla: Regla, tabla: TablaSimbolos): ResultadoReglaAnalisis {
   const errores: ErrorSemantico[] = [];
+  const reglasAplicadas: string[] = [];
   let tipoInferido: ResultadoReglaAnalisis["tipoInferido"];
 
   const condicion = verificarExpr(regla.condicion, tabla);
@@ -168,6 +174,7 @@ export function verificarRegla(regla: Regla, tabla: TablaSimbolos): ResultadoReg
     errores.push(errorSemantico("REGLA_MAL_FORMADA", condicion.regla, `La condición de "${regla.nombre}" debe evaluar a BOOLEANO.`));
   } else {
     tipoInferido = condicion.tipo;
+    reglasAplicadas.push(condicion.regla);
   }
 
   if (regla.acciones.length === 0) {
@@ -176,9 +183,10 @@ export function verificarRegla(regla: Regla, tabla: TablaSimbolos): ResultadoReg
   for (const accion of regla.acciones) {
     const r = verificarSentencia(accion, tabla);
     if (!r.ok) errores.push(r.error);
+    else reglasAplicadas.push(r.regla);
   }
 
-  return { reglaId: regla.id, tipoInferido, errores };
+  return { reglaId: regla.id, tipoInferido, reglasAplicadas, errores };
 }
 
 export function verificarPrograma(programa: Programa): ResultadoReglaAnalisis[] {
@@ -188,7 +196,7 @@ export function verificarPrograma(programa: Programa): ResultadoReglaAnalisis[] 
   // Los errores de declaración (I1-I6) no pertenecen a ninguna regla puntual;
   // se listan aparte, bajo un "reglaId" fijo, para no perderlos.
   if (tabla.errores.length > 0) {
-    resultados.unshift({ reglaId: "(declaraciones)", errores: tabla.errores });
+    resultados.unshift({ reglaId: "(declaraciones)", reglasAplicadas: [], errores: tabla.errores });
   }
   return resultados;
 }

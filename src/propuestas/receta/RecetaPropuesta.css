@@ -375,3 +375,80 @@
   color: var(--color-error);
   cursor: pointer;
 }
+
+/* --- Selector "¿con qué lo comparo?" y condición extra (Y/O) --- */
+.asistente__condicion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.asistente__submodo-etiqueta {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-texto-mute);
+}
+
+.asistente__opciones-grandes--compacto button {
+  padding: 0.65rem;
+  font-size: 0.9rem;
+}
+
+.asistente__segunda-condicion {
+  border-top: 1px dashed var(--color-borde);
+  padding-top: 0.9rem;
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.asistente__agregar-condicion {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed var(--color-borde);
+  color: var(--color-acento-oscuro);
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.asistente__agregar-condicion:hover {
+  border-color: var(--color-acento);
+}
+
+/* --- Revisión en vivo del analizador semántico (paso Confirmar) --- */
+.asistente__revision {
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.asistente__revision--ok {
+  background: var(--color-acento-fondo);
+  border: 1px solid var(--color-acento);
+  color: var(--color-acento-oscuro);
+}
+
+.asistente__revision--error {
+  background: var(--color-error-fondo);
+  border: 1px solid var(--color-error-borde);
+  color: var(--color-error);
+}
+
+.asistente__revision-mensaje {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.asistente__revision-detalle {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.85;
+  display: block;
+}
