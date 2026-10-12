@@ -14,9 +14,8 @@ export interface ReglaIdentificador {
 }
 
 // Reglas de declaración/uso de identificadores, como tabla de datos — igual
-// que MATRIZ_TIPOS en analizadorTipos.ts — para que la UI (pestaña Evidencia)
-// las liste desde una única fuente de verdad en vez de repetirlas en un
-// comentario. Los id/categoria de aquí son los que usan las llamadas a
+// que MATRIZ_TIPOS en analizadorTipos.ts — para tener una única
+// fuente de verdad en vez de repetirlas en un comentario. Los id/categoria de aquí son los que usan las llamadas a
 // errorSemantico() más abajo en este mismo archivo.
 export const REGLAS_IDENTIFICADORES: ReglaIdentificador[] = [
   { id: "I1", nombre: "Identificador no declarado", categoria: "IDENTIFICADOR_NO_DECLARADO", descripcion: "Un SENSOR/ACTUADOR se usa en una regla sin haber sido declarado antes." },

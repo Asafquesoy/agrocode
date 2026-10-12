@@ -64,19 +64,13 @@ descripción más detallada de la arquitectura.
 El analizador semántico (`src/core/analizadorTipos.ts` + `src/core/tablaSimbolos.ts`) se puede
 recorrer de dos formas, ambas usando el mismo código:
 
-1. **Desde la interfaz del agricultor** (`npm run dev` o `npm run tauri dev`): elegir un cultivo,
-   tocar "Agregar una regla nueva" y, en el paso "¿Cuándo?", probar "¿Con qué lo comparo?" → *Otra
-   medición* o *Un equipo* (dispara T9/T6), o en "¿Qué hago?" elegir una medición como objetivo de
-   ENCENDER/APAGAR (dispara I4 + T8). El paso "Confirmar" revisa la regla en vivo con el analizador
-   real y explica el error antes de guardar. La pestaña **Evidencia** del panel de salida muestra las
-   tablas de reglas (T1–T9, I1–I6, categorías de error) y los 6 casos de prueba de `casos/`
-   (Entrada/Esperado/Obtenido/Regla aplicada, recalculados en cada render), con un botón para cargar
-   cualquier caso en la receta.
+1. **Desde la interfaz**: la pestaña **Escribir** del panel de salida permite pegar texto del
+   lenguaje a mano y ver el análisis (`parsearPrograma` + `verificarPrograma`).
 2. **Desde la consola**, con el CLI:
    ```bash
    npm run analizar -- casos/
    ```
-   Analiza los `.agro` de `casos/` (mismos casos que la pestaña Evidencia) y compara el resultado
+   Analiza los `.agro` de `casos/` y compara el resultado
    contra la cabecera `// ESPERADO: VALIDO|RECHAZADO` de cada archivo.
 
 ## Notas
