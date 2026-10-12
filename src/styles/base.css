@@ -56,6 +56,9 @@
 
 * {
   box-sizing: border-box;
+  /* Barras de scroll finas y del tema en vez de las blancas del sistema. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 html,

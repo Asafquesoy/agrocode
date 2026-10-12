@@ -2,7 +2,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 0.9rem;
   color: var(--color-text);
 }
 
@@ -69,22 +69,37 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.9rem;
   color: var(--color-text);
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Una sola línea: un cultivo o nombre largo se corta con "…" en vez de
+   romper la cabecera en varias líneas. */
 .recipe-editor__header p {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: block;
+  min-width: 0;
   margin: 0;
   font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recipe-editor__header-icon {
   display: inline-flex;
+  vertical-align: middle;
+  margin-right: 0.5rem;
   color: var(--color-accent);
+}
+
+.recipe-editor__header-actions {
+  flex-shrink: 0;
+}
+
+.recipe-editor__header-actions button {
+  white-space: nowrap;
 }
 
 /* --- Layout de dos columnas fijo: receta a la izquierda, consola a la
