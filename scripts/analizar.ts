@@ -14,6 +14,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parsearPrograma } from "../src/core/parser.ts";
 import { verificarPrograma } from "../src/core/analizadorTipos.ts";
+import { codigoIntermedioATexto, generarCodigoIntermedio } from "../src/core/codigoIntermedio.ts";
 
 function leerStdin(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -92,6 +93,16 @@ function analizarTexto(nombre: string, texto: string): boolean {
     for (const adv of advertencias) {
       console.log(`[${r.reglaId}] ADVERTENCIA — ${adv.mensaje} (regla ${adv.regla})`);
     }
+  }
+
+  if (ok) {
+    console.log("\nCódigo intermedio (cuádruplos):");
+    console.log(
+      codigoIntermedioATexto(generarCodigoIntermedio(programa))
+        .split("\n")
+        .map((l) => `  ${l}`)
+        .join("\n")
+    );
   }
 
   const obtenido = ok ? "VALIDO" : "RECHAZADO";

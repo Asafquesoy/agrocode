@@ -5,12 +5,13 @@ import { verificarPrograma, type ResultadoReglaAnalisis } from "../core/analizad
 import { programaATexto } from "../core/lenguaje";
 import { parsearPrograma } from "../core/parser";
 import { generarCpp } from "../core/generadorCpp";
+import { generarCodigoIntermedio, type ProgramaIR } from "../core/codigoIntermedio";
 import { IconoAdvertencia } from "./Iconos";
 import { LineaCpp, LineaLenguaje } from "./ResaltadoCodigo";
 import { PanelEvidencia } from "./PanelEvidencia";
 import "./PanelSalida.css";
 
-type Pestana = "lenguaje" | "tipos" | "cpp" | "escribir" | "evidencia";
+type Pestana = "lenguaje" | "tipos" | "ir" | "cpp" | "escribir" | "evidencia";
 
 function hayErroresBloqueantes(analisis: ResultadoReglaAnalisis[]): boolean {
   return analisis.some((r) => r.errores.some((e) => e.categoria !== "ADVERTENCIA"));
@@ -126,9 +127,61 @@ function PestanaEscribir() {
   );
 }
 
+// Cuádruplos agrupados por regla: una fila separadora con el nombre de la
+// regla y debajo sus instrucciones (op, arg1, arg2, resultado).
+function TablaCuadruplos({ ir }: { ir: ProgramaIR }) {
+  const celda = (v: string | null) => v ?? "-";
+  const inicioReglas = ir.reglas.length > 0 ? ir.reglas[0].desde : ir.cuadruplos.length;
+  const fila = (i: number) => {
+    const c = ir.cuadruplos[i];
+    return (
+      <tr key={i}>
+        <td className="panel-salida__ir-indice">{c.indice}</td>
+        <td className="panel-salida__ir-op">{c.op}</td>
+        <td>{celda(c.arg1)}</td>
+        <td>{celda(c.arg2)}</td>
+        <td>{celda(c.resultado)}</td>
+      </tr>
+    );
+  };
+  const filas = [];
+  for (let i = 0; i < inicioReglas; i++) filas.push(fila(i));
+  for (const bloque of ir.reglas) {
+    const horario = bloque.restriccionHoraria
+      ? ` (${bloque.restriccionHoraria.desde}–${bloque.restriccionHoraria.hasta})`
+      : "";
+    filas.push(
+      <tr key={`regla-${bloque.id}`} className="panel-salida__ir-regla">
+        <td colSpan={5}>
+          Regla: {bloque.nombre}
+          {horario}
+        </td>
+      </tr>
+    );
+    for (let i = bloque.desde; i <= bloque.hasta; i++) filas.push(fila(i));
+  }
+  return (
+    <div className="panel-salida__ir-scroll">
+      <table className="panel-salida__ir">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Operación</th>
+            <th>Arg1</th>
+            <th>Arg2</th>
+            <th>Resultado</th>
+          </tr>
+        </thead>
+        <tbody>{filas}</tbody>
+      </table>
+    </div>
+  );
+}
+
 const PESTANAS: { id: Pestana; etiqueta: string }[] = [
   { id: "lenguaje", etiqueta: "Lenguaje" },
   { id: "tipos", etiqueta: "Análisis" },
+  { id: "ir", etiqueta: "Código intermedio" },
   { id: "cpp", etiqueta: "C++ (ESP32)" },
   { id: "escribir", etiqueta: "Escribir" },
   { id: "evidencia", etiqueta: "Evidencia" },
@@ -157,6 +210,15 @@ export function PanelSalida({
       return `// error al generar texto: ${(e as Error).message}`;
     }
   }, [programa]);
+
+  const codigoIR = useMemo(() => {
+    if (!programa || hayErrores) return null;
+    try {
+      return generarCodigoIntermedio(programa);
+    } catch {
+      return null;
+    }
+  }, [programa, hayErrores]);
 
   const textoCpp = useMemo(() => {
     if (!programa || hayErrores) return "";
@@ -205,6 +267,15 @@ export function PanelSalida({
         )}
 
         {programa && pestana === "tipos" && <ListaDiagnostico analisis={analisis} />}
+
+        {programa && pestana === "ir" &&
+          (codigoIR ? (
+            <TablaCuadruplos ir={codigoIR} />
+          ) : (
+            <p className="panel-salida__bloqueo">
+              <IconoAdvertencia size={16} /> Corrige los errores de tipos antes de generar el código intermedio.
+            </p>
+          ))}
 
         {programa && pestana === "cpp" &&
           (hayErrores ? (
