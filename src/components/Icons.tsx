@@ -16,6 +16,8 @@ import {
   TriangleAlert,
   Plus,
   Check,
+  Download,
+  Copy,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -48,6 +50,8 @@ export const VerifiedIcon = withThinStroke(CircleCheck);
 export const WarningIcon = withThinStroke(TriangleAlert);
 export const PlusIcon = withThinStroke(Plus);
 export const CheckIcon = withThinStroke(Check);
+export const SaveIcon = withThinStroke(Download);
+export const CopyIcon = withThinStroke(Copy);
 
 export const CROP_ICONS: Record<string, LucideIcon> = {
   CANA: CaneIcon,

@@ -199,6 +199,40 @@
   gap: 0.5rem;
 }
 
+/* Pestaña C++: barra de exportación (Guardar .ino / Copiar) */
+.output-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.output-panel__actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.output-panel__notice {
+  font-size: 0.85rem;
+  color: var(--color-accent);
+}
+
+.output-panel__notice--error {
+  color: var(--color-error);
+}
+
 .output-panel__warnings {
   margin-top: 0.35rem;
   color: var(--amber);
