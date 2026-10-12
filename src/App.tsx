@@ -1,4 +1,4 @@
-import { RecipeEditor } from "./recipe/RecipeEditor";
+import { DeviceHome } from "./recipe/DeviceHome";
 import "./App.css";
 
 function App() {
@@ -13,7 +13,7 @@ function App() {
       </header>
 
       <section className="app__content">
-        <RecipeEditor />
+        <DeviceHome />
       </section>
     </main>
   );
