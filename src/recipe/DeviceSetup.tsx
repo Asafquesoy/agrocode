@@ -53,28 +53,30 @@ export function DeviceSetup({
 
   return (
     <div className="device-setup">
-      <section className="device-setup__section">
+      <section className="device-setup__section device-setup__section--wide">
         <h2>Tu dispositivo</h2>
-        <label className="device-setup__field">
-          <span>Nombre del dispositivo</span>
-          <input
-            type="text"
-            value={device.name}
-            placeholder="Ej. Parcela del fondo"
-            onChange={(e) => onChange({ ...device, name: e.target.value })}
-          />
-        </label>
-        <label className="device-setup__field">
-          <span>
-            <CropIcon size={16} /> ¿Qué cultivas o qué proceso quieres controlar?
-          </span>
-          <input
-            type="text"
-            value={device.crop}
-            placeholder="Ej. Caña de azúcar, invernadero de chile…"
-            onChange={(e) => onChange({ ...device, crop: e.target.value })}
-          />
-        </label>
+        <div className="device-setup__fields">
+          <label className="device-setup__field">
+            <span>Nombre del dispositivo</span>
+            <input
+              type="text"
+              value={device.name}
+              placeholder="Ej. Parcela del fondo"
+              onChange={(e) => onChange({ ...device, name: e.target.value })}
+            />
+          </label>
+          <label className="device-setup__field">
+            <span>
+              <CropIcon size={16} /> ¿Qué cultivas o qué proceso quieres controlar?
+            </span>
+            <input
+              type="text"
+              value={device.crop}
+              placeholder="Ej. Caña de azúcar, invernadero de chile…"
+              onChange={(e) => onChange({ ...device, crop: e.target.value })}
+            />
+          </label>
+        </div>
       </section>
 
       <section className="device-setup__section">
