@@ -1,16 +1,17 @@
 // AST común: la interfaz (src/recipe/) construye este árbol. El analizador de
 // tipos y el generador de C++ solo conocen este AST, nunca la interfaz que lo
 // produjo.
-import { findActuator, findSensor, type LogicalOperator, type RelationalOperator } from "./catalog.ts";
+import type { LogicalOperator, RelationalOperator } from "./catalog.ts";
+import type { DeviceRegistry } from "./device.ts";
 
 export interface SensorRef {
   kind: "SensorRef";
-  sensor: string; // id de SensorDef
+  sensor: string; // id de un sensor registrado
 }
 
 export interface ActuatorRef {
   kind: "ActuatorRef";
-  actuator: string; // id de ActuatorDef
+  actuator: string; // id de un actuador registrado
 }
 
 export interface Literal {
@@ -44,7 +45,7 @@ export type Expr = Comparison | Logical;
 export interface StateAction {
   kind: "StateAction";
   action: "ENCENDER" | "APAGAR";
-  actuator: string; // id de ActuatorDef
+  actuator: string; // id de un actuador registrado
 }
 
 export interface WaitAction {
@@ -86,7 +87,7 @@ export interface ActuatorDeclaration {
 export type Declaration = SensorDeclaration | ActuatorDeclaration;
 
 export interface Program {
-  crop: string; // id de CropDef
+  crop: string; // identificador del cultivo (DeviceRegistry.cropId)
   cropLine?: number;
   declarations: Declaration[];
   rules: Rule[];
@@ -110,23 +111,29 @@ export function actuatorDeclaration(id: string, line?: number): ActuatorDeclarat
   return { kind: "ActuatorDeclaration", id, line };
 }
 
-// El rol se decide por el catálogo (catalog.ts), no por la posición sintáctica
-// en la que aparece el identificador. Solo si el id no existe en ningún
-// catálogo se cae de vuelta al rol posicional, para no perder identificadores
-// todavía desconocidos (el analizador los reportará como I3).
-function roleFromCatalog(id: string, positionalRole: "SENSOR" | "ACTUADOR"): "SENSOR" | "ACTUADOR" {
-  if (findSensor(id)) return "SENSOR";
-  if (findActuator(id)) return "ACTUADOR";
+// El rol se decide por lo que el agricultor registró (el registro del
+// dispositivo), no por la posición sintáctica en la que aparece el
+// identificador. Si el id no está registrado (o no hay registro) se cae de
+// vuelta al rol posicional, para no perder identificadores todavía
+// desconocidos (el analizador los reportará como I3).
+function roleFromRegistry(
+  id: string,
+  positionalRole: "SENSOR" | "ACTUADOR",
+  registry?: DeviceRegistry
+): "SENSOR" | "ACTUADOR" {
+  if (registry?.sensors.some((s) => s.id === id)) return "SENSOR";
+  if (registry?.actuators.some((a) => a.id === id)) return "ACTUADOR";
   return positionalRole;
 }
 
 // Deriva las declaraciones SENSOR/ACTUADOR a partir de los identificadores
-// realmente usados en las reglas. La usan tanto presets.ts (que no las declara
-// a mano) como printer.ts (para emitir un texto que el parser pueda releer).
-export function usedDeclarations(rules: Rule[]): Declaration[] {
+// realmente usados en las reglas. La usan tanto deviceToProgram (que no las
+// declara a mano) como printer.ts (para emitir un texto que el parser pueda
+// releer).
+export function usedDeclarations(rules: Rule[], registry?: DeviceRegistry): Declaration[] {
   const roles = new Map<string, "SENSOR" | "ACTUADOR">();
   const mark = (id: string, positionalRole: "SENSOR" | "ACTUADOR") => {
-    if (!roles.has(id)) roles.set(id, roleFromCatalog(id, positionalRole));
+    if (!roles.has(id)) roles.set(id, roleFromRegistry(id, positionalRole, registry));
   };
 
   const visitExpr = (e: Expr) => {

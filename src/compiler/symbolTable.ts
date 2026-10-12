@@ -3,7 +3,7 @@
 // reglas. Reúne las "5 reglas relacionadas con la declaración o utilización
 // de identificadores" que pide la Actividad 5 (aquí hay 6, ver tabla abajo).
 import type { Declaration, Expr, Program, Statement } from "./ast.ts";
-import { findActuator, findCrop, findSensor } from "./catalog.ts";
+import type { DeviceRegistry } from "./device.ts";
 import { semanticError, type ErrorCategory, type SemanticError } from "./errors.ts";
 
 export interface IdentifierRule {
@@ -20,9 +20,9 @@ export interface IdentifierRule {
 export const IDENTIFIER_RULES: IdentifierRule[] = [
   { id: "I1", name: "Identificador no declarado", category: "IDENTIFICADOR_NO_DECLARADO", description: "Un SENSOR/ACTUADOR se usa en una regla sin haber sido declarado antes." },
   { id: "I2", name: "Identificador redeclarado", category: "IDENTIFICADOR_REDECLARADO", description: "El mismo identificador se declara dos veces." },
-  { id: "I3", name: "Identificador fuera de catálogo", category: "IDENTIFICADOR_NO_DECLARADO", description: "Se declara un SENSOR/ACTUADOR que no existe en el catálogo del dispositivo (catalog.ts)." },
+  { id: "I3", name: "Identificador no registrado", category: "IDENTIFICADOR_NO_DECLARADO", description: "Se declara un SENSOR/ACTUADOR que el agricultor no registró en este dispositivo." },
   { id: "I4", name: "Uso en rol incorrecto", category: "USO_INCORRECTO_DE_IDENTIFICADOR", description: "Un identificador declarado como SENSOR se usa como ACTUADOR, o viceversa." },
-  { id: "I5", name: "Cultivo inexistente", category: "IDENTIFICADOR_NO_DECLARADO", description: "El CULTIVO del programa no existe en el catálogo de cultivos." },
+  { id: "I5", name: "Cultivo distinto al registrado", category: "IDENTIFICADOR_NO_DECLARADO", description: "El CULTIVO del programa no coincide con el cultivo registrado en el dispositivo." },
   { id: "I6", name: "Identificador declarado sin usar", category: "ADVERTENCIA", description: "Un SENSOR/ACTUADOR se declara pero ninguna regla lo usa (no bloquea el C++)." },
 ];
 
@@ -49,26 +49,31 @@ export interface SymbolTable {
 
 // I1: uso de identificador no declarado en el programa.
 // I2: redeclaración del mismo identificador.
-// I3: identificador declarado que no existe en el catálogo de catalog.ts.
+// I3: identificador declarado que no está registrado en el dispositivo.
 // I4: identificador usado en un rol distinto al declarado (SENSOR <-> ACTUADOR).
-// I5: CULTIVO existente en el catálogo.
+// I5: CULTIVO igual al registrado en el dispositivo.
 // I6: identificador declarado y nunca usado (advertencia, no bloquea el C++).
-export function buildSymbolTable(program: Program): SymbolTable {
+export function buildSymbolTable(program: Program, registry: DeviceRegistry): SymbolTable {
   const symbols = new Map<string, SymbolEntry>();
   const errors: SemanticError[] = [];
 
   for (const decl of program.declarations) {
-    registerDeclaration(decl, symbols, errors);
+    registerDeclaration(decl, symbols, errors, registry);
   }
 
-  checkCrop(program, errors);
+  checkCrop(program, errors, registry);
   checkUsages(program, symbols, errors);
   checkUnused(symbols, errors);
 
   return { symbols, errors };
 }
 
-function registerDeclaration(decl: Declaration, symbols: Map<string, SymbolEntry>, errors: SemanticError[]) {
+function registerDeclaration(
+  decl: Declaration,
+  symbols: Map<string, SymbolEntry>,
+  errors: SemanticError[],
+  registry: DeviceRegistry
+) {
   const role: SymbolRole = decl.kind === "SensorDeclaration" ? "SENSOR" : "ACTUADOR";
 
   // I2: redeclaración.
@@ -77,14 +82,17 @@ function registerDeclaration(decl: Declaration, symbols: Map<string, SymbolEntry
     return;
   }
 
-  // I3: el identificador declarado debe existir en el catálogo de catalog.ts
-  // (que sigue siendo la fuente de verdad de pines/unidades — ver CLAUDE.md).
-  const existsInCatalog = role === "SENSOR" ? findSensor(decl.id) : findActuator(decl.id);
-  if (!existsInCatalog) {
+  // I3: el identificador declarado debe estar registrado en el dispositivo
+  // (el registro es la fuente de verdad de pines/unidades — ver CLAUDE.md).
+  const isRegistered =
+    role === "SENSOR"
+      ? registry.sensors.some((s) => s.id === decl.id)
+      : registry.actuators.some((a) => a.id === decl.id);
+  if (!isRegistered) {
     errors.push(
       identifierError(
         "I3",
-        `"${decl.id}" no existe en el catálogo de ${role === "SENSOR" ? "sensores" : "actuadores"} del dispositivo.`,
+        `"${decl.id}" no está registrado como ${role === "SENSOR" ? "sensor" : "equipo"} de este dispositivo.`,
         decl.line
       )
     );
@@ -94,11 +102,15 @@ function registerDeclaration(decl: Declaration, symbols: Map<string, SymbolEntry
   symbols.set(decl.id, { id: decl.id, role, line: decl.line, used: false });
 }
 
-function checkCrop(program: Program, errors: SemanticError[]) {
-  // I5: CULTIVO debe existir en el catálogo de catalog.ts.
-  if (!findCrop(program.crop)) {
+function checkCrop(program: Program, errors: SemanticError[], registry: DeviceRegistry) {
+  // I5: CULTIVO debe ser el cultivo registrado en el dispositivo.
+  if (program.crop !== registry.cropId) {
     errors.push(
-      identifierError("I5", `El cultivo "${program.crop}" no existe en el catálogo de cultivos.`, program.cropLine)
+      identifierError(
+        "I5",
+        `El cultivo "${program.crop}" no coincide con el cultivo registrado en este dispositivo ("${registry.cropId}").`,
+        program.cropLine
+      )
     );
   }
 }

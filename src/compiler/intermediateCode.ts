@@ -11,7 +11,8 @@
 //   ETIQUETA Lk
 import type { Expr, Program, Statement, TimeWindow } from "./ast.ts";
 import { blockingErrors, checkProgram } from "./typeChecker.ts";
-import { SENSORS } from "./catalog.ts";
+import type { DeviceRegistry } from "./device.ts";
+import { inferSensorTypes } from "./inferTypes.ts";
 
 export type IROp =
   | "LEER"
@@ -66,9 +67,9 @@ function usedSensors(program: Program): Set<string> {
   return used;
 }
 
-export function generateIntermediateCode(program: Program): IRProgram {
+export function generateIntermediateCode(program: Program, registry: DeviceRegistry): IRProgram {
   // Gate semántico: nunca se genera código intermedio de un programa inválido.
-  const errors = blockingErrors(checkProgram(program));
+  const errors = blockingErrors(checkProgram(program, registry));
   if (errors.length > 0) {
     const detail = errors.map((e) => `  - [${e.rule}] ${e.message}`).join("\n");
     throw new Error(`No se puede generar código: hay errores de tipos.\n${detail}`);
@@ -106,10 +107,12 @@ export function generateIntermediateCode(program: Program): IRProgram {
     else emit("ESPERAR", String(s.seconds), null, null);
   };
 
-  // Una lectura por sensor usado, en el orden del catálogo (determinista).
+  // Una lectura por sensor usado, en el orden de registro (determinista). El
+  // tipo de dato del sensor se infiere de sus comparaciones y viaja en arg2.
   const used = usedSensors(program);
-  for (const sensor of SENSORS) {
-    if (used.has(sensor.id)) emit("LEER", sensor.id, null, sensor.id);
+  const types = inferSensorTypes(program);
+  for (const sensor of registry.sensors) {
+    if (used.has(sensor.id)) emit("LEER", sensor.id, types.get(sensor.id) ?? "ENTERO", sensor.id);
   }
 
   for (const rule of program.rules) {

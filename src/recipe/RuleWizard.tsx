@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { LogicalOperator, RelationalOperator } from "../compiler/catalog";
-import { ACTUATORS, SENSORS } from "../compiler/catalog";
+import type { DeviceRegistry } from "../compiler/device";
 import type { Comparison, Expr, Program, Rule } from "../compiler/ast";
 import {
   stateAction,
@@ -13,7 +13,7 @@ import {
 } from "../compiler/ast";
 import { blockingErrors, checkProgram } from "../compiler/typeChecker";
 import {
-  ACTUATOR_ICONS,
+  ACTUATOR_KIND_ICONS,
   AlarmIcon,
   CheckIcon,
   ArrowIcon,
@@ -23,7 +23,7 @@ import {
   ValveIcon,
   VerifiedIcon,
 } from "../components/Icons";
-import "./NewRuleWizard.css";
+import "./RuleWizard.css";
 
 type Step = "WHEN" | "WHAT" | "DURATION" | "SUMMARY";
 
@@ -46,36 +46,6 @@ interface ConditionState {
   decimalValue: number;
 }
 
-function initialCondition(): ConditionState {
-  return {
-    sensor: SENSORS[0].id,
-    operator: "<",
-    mode: "INTEGER",
-    integerValue: 30,
-    decimalValue: 30,
-  };
-}
-
-function buildComparison(c: ConditionState): Comparison {
-  if (c.mode === "INTEGER") return comparisonWith(c.sensor, c.operator, integerLiteral(c.integerValue));
-  return comparisonWith(c.sensor, c.operator, decimalLiteral(c.decimalValue));
-}
-
-function actuatorLabel(id: string): string {
-  return ACTUATORS.find((a) => a.id === id)?.label ?? id;
-}
-
-function operatorText(op: RelationalOperator): string {
-  return op === "<" ? "baja de" : op === ">" ? "sube de" : "es igual a";
-}
-
-function describeCondition(c: ConditionState): string {
-  const sensor = SENSORS.find((s) => s.id === c.sensor);
-  const name = sensor?.label.toLowerCase() ?? c.sensor;
-  const value = c.mode === "INTEGER" ? c.integerValue : c.decimalValue;
-  return `${name} ${operatorText(c.operator)} ${value}${sensor?.unit ?? ""}`;
-}
-
 interface WizardState {
   condition: ConditionState;
   useSecondCondition: boolean;
@@ -87,36 +57,137 @@ interface WizardState {
   seconds: number;
 }
 
-const initialState: WizardState = {
-  condition: initialCondition(),
-  useSecondCondition: false,
-  logicalOperator: "Y",
-  condition2: initialCondition(),
-  actionType: "STATE",
-  stateActionType: "ENCENDER",
-  targetActuator: ACTUATORS[0].id,
-  seconds: 15,
-};
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function initialCondition(registry: DeviceRegistry, sensorId?: string): ConditionState {
+  const sensor = registry.sensors.find((s) => s.id === sensorId) ?? registry.sensors[0];
+  const start = sensor ? clamp(30, sensor.min, sensor.max) : 30;
+  return {
+    sensor: sensor?.id ?? "",
+    operator: "<",
+    mode: "INTEGER",
+    integerValue: start,
+    decimalValue: start,
+  };
+}
+
+function initialState(registry: DeviceRegistry): WizardState {
+  return {
+    condition: initialCondition(registry),
+    useSecondCondition: false,
+    logicalOperator: "Y",
+    condition2: initialCondition(registry),
+    actionType: "STATE",
+    stateActionType: "ENCENDER",
+    targetActuator: registry.actuators[0]?.id ?? "",
+    seconds: 15,
+  };
+}
+
+function conditionFromComparison(c: Comparison, registry: DeviceRegistry): ConditionState | null {
+  if (c.right.kind !== "Literal") return null;
+  // El asistente solo ofrece <, > e =.
+  if (c.operator === "<=" || c.operator === ">=") return null;
+  if (!registry.sensors.some((s) => s.id === c.left.sensor)) return null;
+  return {
+    sensor: c.left.sensor,
+    operator: c.operator,
+    mode: c.right.type === "ENTERO" ? "INTEGER" : "DECIMAL",
+    integerValue: c.right.value,
+    decimalValue: c.right.value,
+  };
+}
+
+// Reconstruye el estado del asistente a partir de una regla ya guardada, o
+// devuelve null si la regla no cabe en lo que el asistente sabe expresar
+// (más de 2 condiciones, anidadas, operadores <= / >=, varias acciones…).
+export function wizardStateFromRule(rule: Rule, registry: DeviceRegistry): WizardState | null {
+  const state = initialState(registry);
+  const expr = rule.condition;
+
+  if (expr.kind === "Comparison") {
+    const c = conditionFromComparison(expr, registry);
+    if (!c) return null;
+    state.condition = c;
+  } else {
+    if (expr.left.kind !== "Comparison" || expr.right.kind !== "Comparison") return null;
+    const c1 = conditionFromComparison(expr.left, registry);
+    const c2 = conditionFromComparison(expr.right, registry);
+    if (!c1 || !c2) return null;
+    state.condition = c1;
+    state.condition2 = c2;
+    state.useSecondCondition = true;
+    state.logicalOperator = expr.operator;
+  }
+
+  if (rule.actions.length !== 1) return null;
+  const action = rule.actions[0];
+  if (action.kind === "StateAction") {
+    if (!registry.actuators.some((a) => a.id === action.actuator)) return null;
+    state.actionType = "STATE";
+    state.stateActionType = action.action;
+    state.targetActuator = action.actuator;
+  } else {
+    state.actionType = "WAIT";
+    state.seconds = action.seconds;
+  }
+  return state;
+}
+
+export function canEditInWizard(rule: Rule, registry: DeviceRegistry): boolean {
+  return wizardStateFromRule(rule, registry) !== null;
+}
+
+function buildComparison(c: ConditionState): Comparison {
+  if (c.mode === "INTEGER") return comparisonWith(c.sensor, c.operator, integerLiteral(c.integerValue));
+  return comparisonWith(c.sensor, c.operator, decimalLiteral(c.decimalValue));
+}
+
+function operatorText(op: RelationalOperator): string {
+  return op === "<" ? "baja de" : op === ">" ? "sube de" : "es igual a";
+}
+
+function describeCondition(c: ConditionState, registry: DeviceRegistry): string {
+  const sensor = registry.sensors.find((s) => s.id === c.sensor);
+  const name = sensor?.label.toLowerCase() ?? c.sensor;
+  const value = c.mode === "INTEGER" ? c.integerValue : c.decimalValue;
+  return `${name} ${operatorText(c.operator)} ${value}${sensor?.unit ?? ""}`;
+}
 
 // Selector de condición: medición, operador y un número (entero o con
 // decimales). Se usa dos veces: para la condición principal y para la
 // condición opcional que se agrega con "Y además" / "O también".
 function ConditionSelector({
   condition,
+  registry,
   onChange,
 }: {
   condition: ConditionState;
+  registry: DeviceRegistry;
   onChange: (c: ConditionState) => void;
 }) {
-  const selectedSensor = SENSORS.find((s) => s.id === condition.sensor)!;
+  const selectedSensor = registry.sensors.find((s) => s.id === condition.sensor) ?? registry.sensors[0];
+  const min = selectedSensor.min;
+  const max = selectedSensor.max;
+  const fill = max > min ? ((clamp(condition.integerValue, min, max) - min) / (max - min)) * 100 : 0;
+
   return (
     <div className="wizard__condition">
       <div className="wizard__big-options">
-        {SENSORS.map((s) => (
+        {registry.sensors.map((s) => (
           <button
             key={s.id}
             className={s.id === condition.sensor ? "selected" : ""}
-            onClick={() => onChange({ ...condition, sensor: s.id })}
+            onClick={() =>
+              onChange({
+                ...condition,
+                sensor: s.id,
+                // El slider de otro sensor tiene otro rango: no se deja el valor fuera de él.
+                integerValue: clamp(condition.integerValue, s.min, s.max),
+              })
+            }
           >
             {s.label}
           </button>
@@ -145,11 +216,11 @@ function ConditionSelector({
         <>
           <input
             type="range"
-            min={0}
-            max={100}
-            value={condition.integerValue}
+            min={min}
+            max={max}
+            value={clamp(condition.integerValue, min, max)}
             className="wizard__slider"
-            style={{ "--fill": `${condition.integerValue}%` } as React.CSSProperties}
+            style={{ "--fill": `${fill}%` } as React.CSSProperties}
             onChange={(e) => onChange({ ...condition, integerValue: Number(e.target.value) })}
           />
           <p className="wizard__value">
@@ -174,17 +245,21 @@ function ConditionSelector({
   );
 }
 
-export function NewRuleWizard({
-  cropId,
+export function RuleWizard({
+  registry,
+  initialRule,
   onComplete,
   onCancel,
 }: {
-  cropId: string;
+  registry: DeviceRegistry;
+  initialRule?: Rule;
   onComplete: (rule: Rule) => void;
   onCancel: () => void;
 }) {
   const [step, setStep] = useState<Step>("WHEN");
-  const [state, setState] = useState<WizardState>(initialState);
+  const [state, setState] = useState<WizardState>(
+    () => (initialRule && wizardStateFromRule(initialRule, registry)) || initialState(registry)
+  );
 
   // El paso DURATION solo existe cuando la acción elegida es "esperar"; el
   // indicador de progreso debe contar 3 o 4 pasos según corresponda.
@@ -201,25 +276,32 @@ export function NewRuleWizard({
         ? stateAction(state.stateActionType, state.targetActuator)
         : waitAction(state.seconds);
     const name = state.useSecondCondition
-      ? `${describeCondition(state.condition)} ${state.logicalOperator === "Y" ? "y" : "o"} ${describeCondition(state.condition2)}`
-      : describeCondition(state.condition);
+      ? `${describeCondition(state.condition, registry)} ${state.logicalOperator === "Y" ? "y" : "o"} ${describeCondition(state.condition2, registry)}`
+      : describeCondition(state.condition, registry);
     return { id: "regla-candidata", name, condition, actions: [action] };
-  }, [state]);
+  }, [state, registry]);
 
   // Resguardo silencioso: con las opciones del asistente la regla siempre
   // debería ser válida; si no lo fuera, no se deja guardar.
   const isRuleValid = useMemo(() => {
     const candidateProgram: Program = {
-      crop: cropId,
-      declarations: usedDeclarations([candidateRule]),
+      crop: registry.cropId,
+      declarations: usedDeclarations([candidateRule], registry),
       rules: [candidateRule],
     };
-    return blockingErrors(checkProgram(candidateProgram)).length === 0;
-  }, [candidateRule, cropId]);
+    return blockingErrors(checkProgram(candidateProgram, registry)).length === 0;
+  }, [candidateRule, registry]);
 
   function finish() {
-    onComplete({ ...candidateRule, id: `regla-${Date.now()}` });
+    // Al editar se conserva el id (y por tanto el lugar en la lista) y el horario.
+    onComplete({
+      ...candidateRule,
+      id: initialRule?.id ?? `regla-${Date.now()}`,
+      ...(initialRule?.timeWindow ? { timeWindow: initialRule.timeWindow } : {}),
+    });
   }
+
+  const actuatorLabel = (id: string) => registry.actuators.find((a) => a.id === id)?.label ?? id;
 
   return (
     <div className="wizard">
@@ -237,7 +319,11 @@ export function NewRuleWizard({
       {step === "WHEN" && (
         <div className="wizard__step">
           <h3>¿Cuándo quieres que actúe el sistema?</h3>
-          <ConditionSelector condition={state.condition} onChange={(condition) => setState((s) => ({ ...s, condition }))} />
+          <ConditionSelector
+            condition={state.condition}
+            registry={registry}
+            onChange={(condition) => setState((s) => ({ ...s, condition }))}
+          />
 
           {state.useSecondCondition ? (
             <div className="wizard__second-condition">
@@ -253,7 +339,11 @@ export function NewRuleWizard({
                 </p>
                 <button onClick={() => setState((s) => ({ ...s, useSecondCondition: false }))}>Quitar esta condición</button>
               </div>
-              <ConditionSelector condition={state.condition2} onChange={(condition2) => setState((s) => ({ ...s, condition2 }))} />
+              <ConditionSelector
+                condition={state.condition2}
+                registry={registry}
+                onChange={(condition2) => setState((s) => ({ ...s, condition2 }))}
+              />
             </div>
           ) : (
             <button className="wizard__add-condition" onClick={() => setState((s) => ({ ...s, useSecondCondition: true }))}>
@@ -295,8 +385,8 @@ export function NewRuleWizard({
             <>
               <p className="wizard__sublabel">Equipos</p>
               <div className="wizard__big-options">
-                {ACTUATORS.map((a) => {
-                  const ActuatorIcon = ACTUATOR_ICONS[a.id] ?? AlarmIcon;
+                {registry.actuators.map((a) => {
+                  const ActuatorIcon = ACTUATOR_KIND_ICONS[a.kind] ?? AlarmIcon;
                   return (
                     <button
                       key={a.id}

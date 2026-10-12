@@ -4,7 +4,7 @@ Fuente de verdad de las fases de desarrollo, pensadas para implementarse por par
 distintas. El alcance objetivo (qué se incluye y qué queda deliberadamente fuera) está en
 `ALCANCE.txt`.
 
-**Fase actual: 1 (completada) → siguiente: Fase 4** (orden acordado: 1 → 4 → 5; la Fase 2 después)
+**Fase actual: 4 (completada) → siguiente: Fase 5** (orden acordado: 1 → 4 → 5; la Fase 2 después)
 
 Decisiones fijas (no re-litigar):
 - Stack: **Tauri 2 + React 19 + TypeScript**, no Flutter (el PDF fuente sugiere Flutter/Dart, pero se
@@ -27,7 +27,7 @@ Decisiones fijas (no re-litigar):
       de Tauri, panel de compilación en React. No requiere ESP32 (`arduino-cli compile` sin placa).
 - [ ] **Fase 3 — Detección de puerto y flasheo.** Crate `serialport`, comandos `listar_puertos`/`subir`,
       selector de puerto + indicador "ESP32 Conectado (COMx)". **Requiere ESP32 físico.**
-- [ ] **Fase 4 — Registro dinámico de cultivo, sensores y actuadores.** Reemplazar los catálogos fijos
+- [x] **Fase 4 — Registro dinámico de cultivo, sensores y actuadores.** Reemplazar los catálogos fijos
       `CROPS`/`SENSORS`/`ACTUATORS` de `catalog.ts` por entidades que el usuario crea, edita y
       elimina desde la UI: nombre libre de cultivo/proceso, alta de sensores y actuadores con sus
       propios parámetros (unidad, rango, modo). El **pin del ESP32 se asigna automáticamente** al
