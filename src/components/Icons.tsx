@@ -13,6 +13,7 @@ import {
   Timer,
   Trash,
   Pencil,
+  ArrowLeft,
   ArrowRight,
   CircleCheck,
   TriangleAlert,
@@ -52,6 +53,7 @@ export const PowerIcon = withThinStroke(Power);
 export const RemoveIcon = withThinStroke(Trash);
 export const EditIcon = withThinStroke(Pencil);
 export const ArrowIcon = withThinStroke(ArrowRight);
+export const BackIcon = withThinStroke(ArrowLeft);
 export const VerifiedIcon = withThinStroke(CircleCheck);
 export const WarningIcon = withThinStroke(TriangleAlert);
 export const PlusIcon = withThinStroke(Plus);

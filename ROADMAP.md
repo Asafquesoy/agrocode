@@ -4,7 +4,7 @@ Fuente de verdad de las fases de desarrollo, pensadas para implementarse por par
 distintas. El alcance objetivo (qué se incluye y qué queda deliberadamente fuera) está en
 `ALCANCE.txt`.
 
-**Fase actual: 4 (completada) → siguiente: Fase 5** (orden acordado: 1 → 4 → 5; la Fase 2 después)
+**Fase actual: 5 (completada) → siguiente: Fase 2** (orden acordado: 1 → 4 → 5; la Fase 2 después)
 
 Decisiones fijas (no re-litigar):
 - Stack: **Tauri 2 + React 19 + TypeScript**, no Flutter (el PDF fuente sugiere Flutter/Dart, pero se
@@ -39,7 +39,7 @@ Decisiones fijas (no re-litigar):
       `typeChecker.ts`, `cppGenerator.ts` y `src/recipe/` (ya no hay receta pre-armada
       por cultivo de catálogo; las reglas se arman a partir de lo que el usuario registró). No
       requiere ESP32.
-- [ ] **Fase 5 — Persistencia de configuraciones de dispositivo.** Guardar, abrir, editar y eliminar en
+- [x] **Fase 5 — Persistencia de configuraciones de dispositivo.** Guardar, abrir, editar y eliminar en
       disco (o storage local de la app) el registro completo de un dispositivo: cultivo/proceso,
       sensores, actuadores y reglas. Un mismo usuario puede tener registrado más de un dispositivo,
       cada uno identificado por su nombre. No requiere ESP32.

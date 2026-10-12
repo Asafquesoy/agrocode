@@ -357,3 +357,29 @@
   font-size: 0.85rem;
   color: var(--color-text-muted);
 }
+
+/* --- Cabecera: volver a la lista + estado de guardado --- */
+.recipe-editor__header-main,
+.recipe-editor__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.recipe-editor__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.recipe-editor__save {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.recipe-editor__save--error {
+  color: var(--color-error);
+}
