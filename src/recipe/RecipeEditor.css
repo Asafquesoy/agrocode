@@ -1,0 +1,302 @@
+.recipe-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  color: var(--color-text);
+}
+
+.recipe-editor__intro {
+  color: var(--color-text-muted);
+  margin: 0;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+/* Sin cultivo elegido todavía: se centra en el espacio disponible, no se
+   queda pegado arriba con un vacío enorme debajo (pantalla completa). */
+.recipe-editor:has(.recipe-editor__crops) {
+  place-content: center;
+  align-items: center;
+}
+
+.recipe-editor__crops {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  max-width: 760px;
+}
+
+.recipe-editor__crop-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2rem 1.25rem;
+  border-radius: 0;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  animation: appear 0.3s ease backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.recipe-editor__crop-button:hover {
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.recipe-editor__icon {
+  color: var(--color-accent);
+}
+
+.recipe-editor__crop-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.recipe-editor__crop-range {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.recipe-editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-text);
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.recipe-editor__header p {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.recipe-editor__header-icon {
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+/* --- Layout de dos columnas fijo: receta a la izquierda, consola a la
+   derecha, llenando siempre el alto disponible. La app es solo para PC, así
+   que no hace falta que este layout se convierta en una sola columna. --- */
+.recipe-editor__layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.recipe-editor__panel-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.recipe-editor__panel-right {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.recipe-editor__panel-right > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.recipe-editor__panel-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.recipe-editor__rules {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.recipe-editor__rule {
+  background: var(--color-surface);
+  border: none;
+  border-bottom: 1px solid var(--color-border-soft);
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  color: var(--color-text);
+  animation: appear 0.3s ease backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+.recipe-editor__rules > .recipe-editor__rule:last-child {
+  border-bottom: none;
+}
+
+.recipe-editor__rule:hover {
+  border-left-color: var(--color-accent);
+}
+
+.recipe-editor__rule-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.recipe-editor__rule-number {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.recipe-editor__rule-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.recipe-editor__remove {
+  border: none;
+  background: transparent;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--color-error);
+  display: inline-flex;
+}
+
+.recipe-editor__rule-body {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.recipe-editor__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+  min-width: 3.5em;
+  text-align: right;
+}
+
+/* --- Slider tipo instrumento: pista cuadrada, thumb cuadrado --- */
+.recipe-editor__slider,
+.wizard__slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  min-height: 44px; /* objetivo táctil, aunque la pista visual sea delgada */
+  background: transparent;
+  cursor: pointer;
+}
+
+.recipe-editor__slider::-webkit-slider-runnable-track,
+.wizard__slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0%,
+    var(--color-accent) var(--fill, 0%),
+    var(--color-border) var(--fill, 0%),
+    var(--color-border) 100%
+  );
+}
+
+.recipe-editor__slider::-webkit-slider-thumb,
+.wizard__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  cursor: pointer;
+}
+
+.recipe-editor__slider::-webkit-slider-thumb:hover,
+.wizard__slider::-webkit-slider-thumb:hover {
+  background: var(--color-accent);
+}
+
+.recipe-editor__slider:focus-visible,
+.wizard__slider:focus-visible {
+  outline: none;
+}
+
+.recipe-editor__slider:focus-visible::-webkit-slider-thumb,
+.wizard__slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+
+.recipe-editor__slider::-moz-range-track,
+.wizard__slider::-moz-range-track {
+  height: 6px;
+  border-radius: 2px;
+  background: var(--color-border);
+}
+
+.recipe-editor__slider::-moz-range-progress,
+.wizard__slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+.recipe-editor__slider::-moz-range-thumb,
+.wizard__slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  cursor: pointer;
+}
+
+.recipe-editor__add {
+  align-self: stretch;
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-panel);
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.recipe-editor__add:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+}

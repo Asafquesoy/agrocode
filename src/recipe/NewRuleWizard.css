@@ -1,18 +1,18 @@
 /* --- Asistente de nueva regla: los 4 pasos guiados para armar una regla --- */
-.asistente {
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-panel);
+.wizard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  color: var(--color-texto);
+  color: var(--color-text);
 }
 
 /* Indicador de pasos en lenguaje llano: "Paso 1 de 4 · ¿Cuándo?", con
    conectores hairline entre pasos. */
-.asistente__progreso {
+.wizard__progress {
   display: flex;
   gap: 0.5rem;
   list-style: none;
@@ -21,72 +21,72 @@
   flex-wrap: wrap;
 }
 
-.asistente__progreso li {
+.wizard__progress li {
   display: flex;
   align-items: center;
   gap: 0.45rem;
   font-size: 0.82rem;
-  color: var(--color-texto-mute);
+  color: var(--color-text-muted);
 }
 
-.asistente__progreso li:not(:last-child)::after {
+.wizard__progress li:not(:last-child)::after {
   content: "";
   width: 1.25rem;
   height: 1px;
-  background: var(--color-borde);
+  background: var(--color-border);
   margin-left: 0.45rem;
 }
 
-.asistente__progreso-circulo {
+.wizard__progress-circle {
   width: 1.5rem;
   height: 1.4rem;
-  border-radius: var(--radio);
+  border-radius: var(--radius);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
-  border: 1px solid var(--color-borde);
-  color: var(--color-texto-mute);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
 }
 
-.asistente__progreso li.actual .asistente__progreso-circulo {
-  border-color: var(--color-acento);
-  background: var(--color-acento-fondo);
-  color: var(--color-acento);
+.wizard__progress li.current .wizard__progress-circle {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
 }
 
-.asistente__progreso li.completado .asistente__progreso-circulo {
-  border-color: var(--color-acento);
-  color: var(--color-acento);
+.wizard__progress li.done .wizard__progress-circle {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
-.asistente__progreso li.actual .asistente__progreso-etiqueta {
-  color: var(--color-texto);
+.wizard__progress li.current .wizard__progress-label {
+  color: var(--color-text);
   font-weight: 700;
 }
 
-.asistente__paso h3 {
+.wizard__step h3 {
   margin-top: 0;
   font-size: 0.95rem;
 }
 
-.asistente__opciones-grandes {
+.wizard__big-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1px;
   margin: 0.75rem 0;
-  background: var(--color-borde);
-  border: 1px solid var(--color-borde);
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
 }
 
-.asistente__opciones-grandes button {
+.wizard__big-options button {
   min-height: 64px;
   padding: 0.9rem;
   border-radius: 0;
   border: none;
-  background: var(--color-superficie);
-  color: var(--color-texto);
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 0.95rem;
   display: flex;
@@ -97,75 +97,75 @@
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.asistente__opciones-grandes button:hover {
-  background: var(--color-tarjeta);
+.wizard__big-options button:hover {
+  background: var(--color-card);
 }
 
-.asistente__opciones-grandes button.seleccionado {
-  background: var(--color-acento-fondo);
-  color: var(--color-acento);
+.wizard__big-options button.selected {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--color-acento);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
-.asistente__valor {
+.wizard__value {
   font-variant-numeric: tabular-nums;
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--color-acento-oscuro);
+  color: var(--color-accent-dark);
 }
 
-.asistente__nav {
+.wizard__nav {
   display: flex;
   justify-content: space-between;
 }
 
-.asistente__nav button {
+.wizard__nav button {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-.asistente__flecha-atras {
+.wizard__back-arrow {
   transform: rotate(180deg);
 }
 
-.asistente__siguiente {
-  background: var(--color-acento);
-  color: var(--verde-noche);
+.wizard__next {
+  background: var(--color-accent);
+  color: var(--green-night);
   border: none;
-  border-radius: var(--radio);
+  border-radius: var(--radius);
   padding: 0.55rem 1.1rem;
   cursor: pointer;
   font-weight: 600;
 }
 
-.asistente__siguiente:hover {
-  background: var(--lima-claro);
+.wizard__next:hover {
+  background: var(--lime-light);
 }
 
 /* El resumen se presenta como un bloque de código: canaleta a la izquierda,
    palabras clave del lenguaje en lima mayúsculas. */
-.asistente__resumen {
-  font-family: var(--fuente-texto);
+.wizard__summary {
+  font-family: var(--font-text);
   font-size: 1rem;
   line-height: 1.7;
-  background: var(--color-tarjeta);
-  color: var(--color-texto);
-  border-radius: var(--radio);
-  border-left: 2px solid var(--color-acento);
+  background: var(--color-card);
+  color: var(--color-text);
+  border-radius: var(--radius);
+  border-left: 2px solid var(--color-accent);
   padding: 1rem 1.15rem;
 }
 
-.asistente__resumen-clave {
-  font-family: var(--fuente-mono);
+.wizard__summary-key {
+  font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--color-acento);
+  color: var(--color-accent);
   font-weight: 700;
 }
 
-.asistente__cancelar {
+.wizard__cancel {
   align-self: flex-end;
   background: transparent;
   border: none;
@@ -175,26 +175,26 @@
 }
 
 /* --- Selector "¿con qué lo comparo?" y condición extra (Y/O) --- */
-.asistente__condicion {
+.wizard__condition {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
-.asistente__submodo-etiqueta {
+.wizard__sublabel {
   margin: 0.5rem 0 0;
   font-size: 0.85rem;
-  color: var(--color-texto-mute);
+  color: var(--color-text-muted);
 }
 
-.asistente__opciones-grandes--compacto button {
+.wizard__big-options--compact button {
   min-height: 48px;
   padding: 0.6rem;
   font-size: 0.88rem;
 }
 
-.asistente__segunda-condicion {
-  border-top: 1px dashed var(--color-borde);
+.wizard__second-condition {
+  border-top: 1px dashed var(--color-border);
   padding-top: 0.9rem;
   margin-top: 0.4rem;
   display: flex;
@@ -202,12 +202,12 @@
   gap: 0.6rem;
 }
 
-.asistente__agregar-condicion {
+.wizard__add-condition {
   align-self: flex-start;
   background: transparent;
-  border: 1px dashed var(--color-borde);
-  color: var(--color-acento);
-  border-radius: var(--radio);
+  border: 1px dashed var(--color-border);
+  color: var(--color-accent);
+  border-radius: var(--radius);
   padding: 0.5rem 1rem;
   cursor: pointer;
   display: inline-flex;
@@ -217,6 +217,6 @@
   font-weight: 700;
 }
 
-.asistente__agregar-condicion:hover {
-  border-color: var(--color-acento);
+.wizard__add-condition:hover {
+  border-color: var(--color-accent);
 }
