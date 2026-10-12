@@ -1,16 +1,18 @@
 // Iconografía de la app: capa fina sobre lucide-react, para que ningún
 // componente dependa directamente de la librería de íconos.
 import {
-  Wheat,
-  Citrus,
   Sprout,
-  Leaf,
   Droplets,
+  CloudRain,
+  Thermometer,
+  Wind,
   Gauge,
   Zap,
   Siren,
+  Power,
   Timer,
   Trash,
+  Pencil,
   ArrowRight,
   CircleCheck,
   TriangleAlert,
@@ -30,11 +32,8 @@ function withThinStroke(BaseIcon: LucideIcon): LucideIcon {
   return Icon as LucideIcon;
 }
 
-// --- Cultivos ---
-export const CaneIcon = withThinStroke(Wheat);
-export const CitrusIcon = withThinStroke(Citrus);
-export const CornIcon = withThinStroke(Sprout);
-export const SorghumIcon = withThinStroke(Leaf);
+// --- Cultivo (texto libre: un solo icono genérico) ---
+export const CropIcon = withThinStroke(Sprout);
 
 // --- Acciones / actuadores ---
 export const DropIcon = withThinStroke(Droplets);
@@ -43,8 +42,15 @@ export const PumpIcon = withThinStroke(Zap);
 export const AlarmIcon = withThinStroke(Siren);
 export const TimerIcon = withThinStroke(Timer);
 
+// --- Sensores ---
+export const RainIcon = withThinStroke(CloudRain);
+export const TemperatureIcon = withThinStroke(Thermometer);
+export const AirIcon = withThinStroke(Wind);
+export const PowerIcon = withThinStroke(Power);
+
 // --- Interfaz ---
 export const RemoveIcon = withThinStroke(Trash);
+export const EditIcon = withThinStroke(Pencil);
 export const ArrowIcon = withThinStroke(ArrowRight);
 export const VerifiedIcon = withThinStroke(CircleCheck);
 export const WarningIcon = withThinStroke(TriangleAlert);
@@ -53,16 +59,18 @@ export const CheckIcon = withThinStroke(Check);
 export const SaveIcon = withThinStroke(Download);
 export const CopyIcon = withThinStroke(Copy);
 
-export const CROP_ICONS: Record<string, LucideIcon> = {
-  CANA: CaneIcon,
-  CITRICOS: CitrusIcon,
-  MAIZ: CornIcon,
-  SORGO: SorghumIcon,
+// Iconos por *tipo* de aparato (catalog.ts), no por id: los aparatos los
+// registra el agricultor con nombre libre.
+export const SENSOR_KIND_ICONS: Record<string, LucideIcon> = {
+  SOIL_MOISTURE: DropIcon,
+  RAIN: RainIcon,
+  TEMPERATURE: TemperatureIcon,
+  AIR_HUMIDITY: AirIcon,
 };
 
-export const ACTUATOR_ICONS: Record<string, LucideIcon> = {
-  BOMBA_PRINCIPAL: PumpIcon,
-  VALVULA_NORTE: ValveIcon,
-  VALVULA_SUR: ValveIcon,
-  ALARMA: AlarmIcon,
+export const ACTUATOR_KIND_ICONS: Record<string, LucideIcon> = {
+  PUMP: PumpIcon,
+  VALVE: ValveIcon,
+  ALARM: AlarmIcon,
+  OTHER: PowerIcon,
 };

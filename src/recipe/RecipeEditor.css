@@ -300,3 +300,60 @@
   border-color: var(--color-accent);
   background: var(--color-accent-bg);
 }
+
+/* --- Editar regla, sugerencias y avisos --- */
+.recipe-editor__edit {
+  border: none;
+  background: transparent;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--color-accent);
+  display: inline-flex;
+}
+
+.recipe-editor__edit:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.recipe-editor__suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.recipe-editor__suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  background: transparent;
+  color: var(--color-text);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-panel);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recipe-editor__suggestion svg {
+  color: var(--color-accent);
+  flex: none;
+}
+
+.recipe-editor__suggestion:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+.recipe-editor__add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.recipe-editor__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}

@@ -6,6 +6,8 @@ import { programToText } from "../compiler/printer";
 import { parseProgram } from "../compiler/parser";
 import { generateCpp } from "../compiler/cppGenerator";
 import { cell, generateIntermediateCode, type IRProgram } from "../compiler/intermediateCode";
+import type { DeviceRegistry } from "../compiler/device";
+import { inferSensorTypes } from "../compiler/inferTypes";
 import { CopyIcon, SaveIcon, WarningIcon } from "./Icons";
 import { CppLine, LanguageLine } from "./CodeHighlight";
 import { copySketch, saveSketch } from "./exportSketch";
@@ -84,18 +86,25 @@ function CodeBlock({ lines, highlight }: { lines: string[]; highlight: (text: st
 
 // Pestaña "Escribir": recibe texto suelto del lenguaje intermedio (tecleado a
 // mano) y lo pasa por parser + analizador, igual que scripts/analyze.ts.
-function WriteTab() {
-  const [text, setText] = useState(
-    "CULTIVO CANA;\nSENSOR HUMEDAD_SUELO;\nACTUADOR BOMBA_PRINCIPAL;\n\nSI HUMEDAD_SUELO < 30\n  ENCENDER BOMBA_PRINCIPAL;"
-  );
+// Texto de ejemplo armado con lo que el agricultor registró, para que arranque
+// válido contra su dispositivo.
+function sampleText(registry: DeviceRegistry): string {
+  const sensor = registry.sensors[0];
+  const actuator = registry.actuators[0];
+  if (!sensor || !actuator) return `CULTIVO ${registry.cropId};\n`;
+  return `CULTIVO ${registry.cropId};\nSENSOR ${sensor.id};\nACTUADOR ${actuator.id};\n\nSI ${sensor.id} < 30\n  ENCENDER ${actuator.id};`;
+}
+
+function WriteTab({ registry }: { registry: DeviceRegistry }) {
+  const [text, setText] = useState(() => sampleText(registry));
 
   const result = useMemo(() => {
     try {
-      return { ok: true as const, results: checkProgram(parseProgram(text)) };
+      return { ok: true as const, results: checkProgram(parseProgram(text), registry) };
     } catch (e) {
       return { ok: false as const, message: (e as Error).message };
     }
-  }, [text]);
+  }, [text, registry]);
 
   return (
     <div className="output-panel__write">
@@ -173,7 +182,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "write", label: "Escribir" },
 ];
 
-export function OutputPanel({ program }: { program: Program | null }) {
+export function OutputPanel({ program, registry }: { program: Program | null; registry: DeviceRegistry }) {
   const [tab, setTab] = useState<Tab>("language");
   const [exportNotice, setExportNotice] = useState<{ text: string; error: boolean } | null>(null);
 
@@ -184,7 +193,12 @@ export function OutputPanel({ program }: { program: Program | null }) {
     return () => clearTimeout(timer);
   }, [exportNotice]);
 
-  const results = useMemo(() => (program ? checkProgram(program) : []), [program]);
+  const results = useMemo(() => (program ? checkProgram(program, registry) : []), [program, registry]);
+  // Tipo de dato de cada sensor, inferido de cómo lo usan las reglas.
+  const inferredTypes = useMemo(
+    () => (program ? inferSensorTypes(program) : new Map<string, string>()),
+    [program]
+  );
   // Solo los errores bloqueantes impiden generar C++; una ADVERTENCIA (p. ej.
   // un sensor declarado y nunca usado) se muestra pero no bloquea nada.
   const errorCount = blockingErrors(results).length;
@@ -195,20 +209,20 @@ export function OutputPanel({ program }: { program: Program | null }) {
   const ir = useMemo(() => {
     if (!program || hasErrors) return null;
     try {
-      return generateIntermediateCode(program);
+      return generateIntermediateCode(program, registry);
     } catch {
       return null;
     }
-  }, [program, hasErrors]);
+  }, [program, registry, hasErrors]);
 
   const cppText = useMemo(() => {
     if (!program || hasErrors) return "";
     try {
-      return generateCpp(program);
+      return generateCpp(program, registry);
     } catch (e) {
       return `// ${(e as Error).message}`;
     }
-  }, [program, hasErrors]);
+  }, [program, registry, hasErrors]);
 
   const appliedRules = useMemo(() => [...new Set(results.flatMap((r) => r.appliedRules))], [results]);
 
@@ -260,7 +274,25 @@ export function OutputPanel({ program }: { program: Program | null }) {
           <CodeBlock lines={languageText.split("\n")} highlight={(t) => <LanguageLine text={t} />} />
         )}
 
-        {program && tab === "types" && <DiagnosticList results={results} />}
+        {program && tab === "types" && (
+          <>
+            {inferredTypes.size > 0 && (
+              <div className="output-panel__inferred">
+                <p className="output-panel__inferred-title">Tipo de dato de cada sensor (según sus reglas)</p>
+                <ul>
+                  {registry.sensors
+                    .filter((s) => inferredTypes.has(s.id))
+                    .map((s) => (
+                      <li key={s.id}>
+                        {s.label} <span className="output-panel__inferred-type">{inferredTypes.get(s.id)}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+            <DiagnosticList results={results} />
+          </>
+        )}
 
         {program && tab === "ir" &&
           (ir ? (
@@ -298,7 +330,7 @@ export function OutputPanel({ program }: { program: Program | null }) {
             </>
           ))}
 
-        {tab === "write" && <WriteTab />}
+        {tab === "write" && <WriteTab registry={registry} />}
       </div>
 
       {program && (

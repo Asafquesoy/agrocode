@@ -14,59 +14,48 @@ export type DataType =
 export type RelationalOperator = "<" | ">" | "=" | "<=" | ">=";
 export type LogicalOperator = "Y" | "O";
 
-// --- Catálogo del dominio agrícola de El Mante ---
+// --- Tipos de aparato ---
+//
+// Esto NO es el catálogo de lo que tiene el agricultor: sus sensores y equipos
+// concretos los registra él (ver device.ts). Aquí solo viven las *clases* de
+// aparato que el sistema sabe leer o accionar, y de ellas salen el modo de
+// lectura, la unidad y el rango. El pin nunca viene de aquí: lo asigna pins.ts.
 
-export interface SensorDef {
-  id: string;
+export type SensorKindId = "SOIL_MOISTURE" | "RAIN" | "TEMPERATURE" | "AIR_HUMIDITY";
+export type ActuatorKindId = "PUMP" | "VALVE" | "ALARM" | "OTHER";
+
+export interface SensorKind {
+  id: SensorKindId;
   label: string;
   unit: string;
-  pin: number;
+  min: number;
+  max: number;
   mode: "ANALOG" | "I2C";
 }
 
-export interface ActuatorDef {
-  id: string;
+export interface ActuatorKind {
+  id: ActuatorKindId;
   label: string;
-  pin: number;
 }
 
-export interface CropDef {
-  id: string;
-  label: string;
-  icon: "CANA" | "CITRICOS" | "MAIZ" | "SORGO";
-  minMoisture: number;
-  maxMoisture: number;
-}
-
-export const SENSORS: SensorDef[] = [
-  { id: "HUMEDAD_SUELO", label: "Humedad del suelo", unit: "%", pin: 34, mode: "ANALOG" },
-  { id: "TEMPERATURA", label: "Temperatura", unit: "°C", pin: 4, mode: "I2C" },
-  { id: "HUMEDAD_AIRE", label: "Humedad del aire", unit: "%", pin: 4, mode: "I2C" },
-  { id: "LLUVIA", label: "Sensor de lluvia", unit: "", pin: 35, mode: "ANALOG" },
+export const SENSOR_KINDS: SensorKind[] = [
+  { id: "SOIL_MOISTURE", label: "Humedad del suelo", unit: "%", min: 0, max: 100, mode: "ANALOG" },
+  { id: "RAIN", label: "Sensor de lluvia", unit: "", min: 0, max: 100, mode: "ANALOG" },
+  { id: "TEMPERATURE", label: "Temperatura", unit: "°C", min: -10, max: 60, mode: "I2C" },
+  { id: "AIR_HUMIDITY", label: "Humedad del aire", unit: "%", min: 0, max: 100, mode: "I2C" },
 ];
 
-export const ACTUATORS: ActuatorDef[] = [
-  { id: "BOMBA_PRINCIPAL", label: "Bomba de riego principal", pin: 26 },
-  { id: "VALVULA_NORTE", label: "Válvula norte", pin: 27 },
-  { id: "VALVULA_SUR", label: "Válvula sur", pin: 14 },
-  { id: "ALARMA", label: "Alarma / notificación", pin: 25 },
+export const ACTUATOR_KINDS: ActuatorKind[] = [
+  { id: "PUMP", label: "Bomba de riego" },
+  { id: "VALVE", label: "Válvula" },
+  { id: "ALARM", label: "Alarma / notificación" },
+  { id: "OTHER", label: "Otro equipo" },
 ];
 
-export const CROPS: CropDef[] = [
-  { id: "CANA", label: "Caña de azúcar", icon: "CANA", minMoisture: 30, maxMoisture: 80 },
-  { id: "CITRICOS", label: "Cítricos", icon: "CITRICOS", minMoisture: 35, maxMoisture: 75 },
-  { id: "MAIZ", label: "Maíz", icon: "MAIZ", minMoisture: 40, maxMoisture: 85 },
-  { id: "SORGO", label: "Sorgo", icon: "SORGO", minMoisture: 25, maxMoisture: 70 },
-];
-
-export function findSensor(id: string): SensorDef | undefined {
-  return SENSORS.find((s) => s.id === id);
+export function findSensorKind(id: string): SensorKind | undefined {
+  return SENSOR_KINDS.find((k) => k.id === id);
 }
 
-export function findActuator(id: string): ActuatorDef | undefined {
-  return ACTUATORS.find((a) => a.id === id);
-}
-
-export function findCrop(id: string): CropDef | undefined {
-  return CROPS.find((c) => c.id === id);
+export function findActuatorKind(id: string): ActuatorKind | undefined {
+  return ACTUATOR_KINDS.find((k) => k.id === id);
 }
