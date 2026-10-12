@@ -8,43 +8,43 @@
 }
 
 /* Barra de título: solo la marca. Nada de eslóganes ni nombres de finca. */
-.app__barra {
+.app__bar {
   display: flex;
   align-items: center;
   padding: 0.9rem 0.25rem;
-  border-bottom: 1px solid var(--color-borde);
+  border-bottom: 1px solid var(--color-border);
   margin-bottom: 1.25rem;
 }
 
-.app__marca {
+.app__brand {
   display: flex;
   align-items: center;
   gap: 0.6rem;
 }
 
-.app__punto {
+.app__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--lima);
-  animation: parpadeo 2.4s ease-in-out infinite;
+  background: var(--lime);
+  animation: blink 2.4s ease-in-out infinite;
 }
 
 .app__logo {
   width: 24px;
   height: 24px;
-  border-radius: var(--radio);
+  border-radius: var(--radius);
 }
 
 .app__wordmark {
-  font-family: var(--fuente-display);
+  font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--color-texto);
+  color: var(--color-text);
 }
 
-.app__contenido {
+.app__content {
   min-height: 0;
   overflow: hidden;
-  color: var(--color-texto);
+  color: var(--color-text);
 }

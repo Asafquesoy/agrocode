@@ -6,43 +6,43 @@
    técnica — el agricultor que usa esto no tiene por qué saber de tecnología. */
 
 :root {
-  --fuente-display: "Nunito Variable", -apple-system, "Segoe UI", sans-serif;
-  --fuente-texto: "Nunito Variable", -apple-system, "Segoe UI", sans-serif;
-  --fuente-mono: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --font-display: "Nunito Variable", -apple-system, "Segoe UI", sans-serif;
+  --font-text: "Nunito Variable", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
 
-  --verde-noche: #0a1d11;
-  --verde-bosque: #0f2717;
-  --verde-bandera: #1e6b32;
-  --verde-hoja: #4fa83d;
-  --lima: #a8dc3c;
-  --lima-claro: #d6f05a;
-  --crema: #e6ead6;
-  --tierra: #89a184;
-  --ambar: #e0ac5a;
-  --ladrillo: #e08a71;
+  --green-night: #0a1d11;
+  --green-forest: #0f2717;
+  --green-flag: #1e6b32;
+  --green-leaf: #4fa83d;
+  --lime: #a8dc3c;
+  --lime-light: #d6f05a;
+  --cream: #e6ead6;
+  --earth: #89a184;
+  --amber: #e0ac5a;
+  --brick: #e08a71;
 
   /* Roles semánticos */
-  --color-fondo: var(--verde-noche);
-  --color-superficie: #0f2717;
-  --color-tarjeta: #143020;
-  --color-borde: #1e4429;
-  --color-borde-suave: #16331e;
-  --color-texto: var(--crema);
-  --color-texto-mute: var(--tierra);
-  --color-acento: var(--lima);
-  --color-acento-oscuro: var(--lima-claro);
-  --color-acento-fondo: rgba(168, 220, 60, 0.08);
-  --color-error: var(--ladrillo);
-  --color-error-fondo: rgba(224, 138, 113, 0.1);
-  --color-error-borde: #5c3226;
-  --color-advertencia: var(--ambar);
+  --color-bg: var(--green-night);
+  --color-surface: #0f2717;
+  --color-card: #143020;
+  --color-border: #1e4429;
+  --color-border-soft: #16331e;
+  --color-text: var(--cream);
+  --color-text-muted: var(--earth);
+  --color-accent: var(--lime);
+  --color-accent-dark: var(--lime-light);
+  --color-accent-bg: rgba(168, 220, 60, 0.08);
+  --color-error: var(--brick);
+  --color-error-bg: rgba(224, 138, 113, 0.1);
+  --color-error-border: #5c3226;
+  --color-warning: var(--amber);
 
-  --radio: 3px;
-  --radio-panel: 6px;
+  --radius: 3px;
+  --radius-panel: 6px;
 
-  color: var(--color-texto);
-  background-color: var(--color-fondo);
-  font-family: var(--fuente-texto);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  font-family: var(--font-text);
   font-size: 17px;
   line-height: 1.6;
   font-weight: 400;
@@ -81,9 +81,9 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--fuente-display);
+  font-family: var(--font-display);
   font-weight: 700;
-  color: var(--color-acento-oscuro);
+  color: var(--color-accent-dark);
 }
 
 input,
@@ -91,31 +91,31 @@ button,
 select {
   font-family: inherit;
   font-size: 1rem;
-  color: var(--color-texto);
+  color: var(--color-text);
 }
 
 select,
 input[type="text"],
 input[type="number"],
 input[type="time"] {
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   padding: 0.4rem 0.6rem;
 }
 
 /* Botones sin clase propia deben seguir el tema en vez del gris por defecto del navegador. */
 button {
   cursor: pointer;
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   padding: 0.5rem 0.9rem;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 :focus-visible {
-  outline: 2px solid var(--lima);
+  outline: 2px solid var(--lime);
   outline-offset: 2px;
 }
 
@@ -129,7 +129,7 @@ button {
   }
 }
 
-@keyframes aparecer {
+@keyframes appear {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -140,7 +140,7 @@ button {
   }
 }
 
-@keyframes parpadeo {
+@keyframes blink {
   0%,
   100% {
     opacity: 1;
