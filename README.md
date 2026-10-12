@@ -49,8 +49,8 @@ El instalador/ejecutable final queda en `src-tauri/target/release/bundle/`.
 ## Estructura del proyecto
 
 - `src/` — código del frontend (React + TypeScript). El núcleo del compilador (AST, análisis de
-  tipos, generación de C++) vive en `src/core/`, independiente de la UI. La interfaz de "receta"
-  vive en `src/propuestas/receta/`.
+  tipos, generación de C++) vive en `src/compiler/`, independiente de la UI. La interfaz
+  vive en `src/recipe/` y `src/components/`.
 - `src-tauri/` — backend nativo en Rust (ventana, plugins, configuración de Tauri).
 - `public/` — archivos estáticos.
 - `dist/` — salida del build del frontend (generada, no versionar).
@@ -61,16 +61,16 @@ descripción más detallada de la arquitectura.
 
 ## Demostrar el analizador semántico
 
-El analizador semántico (`src/core/analizadorTipos.ts` + `src/core/tablaSimbolos.ts`) se puede
+El analizador semántico (`src/compiler/typeChecker.ts` + `src/compiler/symbolTable.ts`) se puede
 recorrer de dos formas, ambas usando el mismo código:
 
 1. **Desde la interfaz**: la pestaña **Escribir** del panel de salida permite pegar texto del
-   lenguaje a mano y ver el análisis (`parsearPrograma` + `verificarPrograma`).
+   lenguaje a mano y ver el análisis (`parseProgram` + `checkProgram`).
 2. **Desde la consola**, con el CLI:
    ```bash
-   npm run analizar -- casos/
+   npm run analyze -- examples/
    ```
-   Analiza los `.agro` de `casos/` y compara el resultado
+   Analiza los `.agro` de `examples/` y compara el resultado
    contra la cabecera `// ESPERADO: VALIDO|RECHAZADO` de cada archivo.
 
 ## Notas

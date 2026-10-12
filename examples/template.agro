@@ -1,9 +1,9 @@
 // Plantilla de sintaxis del lenguaje de Agrocode.
 // Copien este archivo (o creen uno nuevo) para sus propios casos de prueba;
-// el CLI (npm run analizar -- casos/) recorre todos los .agro de esta carpeta.
+// el CLI (npm run analyze -- examples/) recorre todos los .agro de esta carpeta.
 //
 // Todo SENSOR/ACTUADOR usado en una regla debe declararse antes.
-// Identificadores válidos hoy (catálogo en src/core/tipos.ts):
+// Identificadores válidos hoy (catálogo en src/compiler/catalog.ts):
 //   SENSORES:  HUMEDAD_SUELO, TEMPERATURA, HUMEDAD_AIRE, LLUVIA
 //   ACTUADORES: BOMBA_PRINCIPAL, VALVULA_NORTE, VALVULA_SUR, ALARMA
 //   CULTIVOS:  CANA, CITRICOS, MAIZ, SORGO
