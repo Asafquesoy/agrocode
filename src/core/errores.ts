@@ -31,8 +31,7 @@ export function esBloqueante(error: ErrorSemantico): boolean {
   return error.categoria !== "ADVERTENCIA";
 }
 
-// Las 3+ categorías de error que pide la Actividad 5, listadas como dato para
-// que la pestaña "Evidencia" las muestre sin repetir el enum a mano.
+// Las 3+ categorías de error que pide la Actividad 5, listadas como dato.
 export const CATEGORIAS_ERROR: { categoria: CategoriaError; descripcion: string }[] = [
   { categoria: "TIPO_INCOMPATIBLE", descripcion: "Los tipos de los dos lados de una operación no combinan (matriz de tipos T6–T9)." },
   { categoria: "IDENTIFICADOR_NO_DECLARADO", descripcion: "Se usa un identificador que no fue declarado, o se declaró algo fuera del catálogo." },

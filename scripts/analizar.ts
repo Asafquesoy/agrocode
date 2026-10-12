@@ -26,8 +26,7 @@ function leerStdin(): Promise<string> {
   });
 }
 
-// Cabecera opcional de los .agro (ver también src/core/casosPrueba.ts, que
-// lee la misma convención para la pestaña "Evidencia" de la app):
+// Cabecera opcional de los .agro:
 //   // ESPERADO: VALIDO | RECHAZADO
 //   // REGLA: T1, T4
 // Si el archivo la trae, el CLI compara el resultado obtenido contra ella.
