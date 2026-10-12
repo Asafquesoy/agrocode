@@ -243,3 +243,49 @@
 .panel-salida__pie-codigo {
   font-family: var(--fuente-mono);
 }
+
+/* Pestaña "Código intermedio": tabla de cuádruplos */
+.panel-salida__ir-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.panel-salida__ir {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  font-family: var(--fuente-mono);
+}
+
+.panel-salida__ir th,
+.panel-salida__ir td {
+  text-align: left;
+  padding: 0.35rem 0.65rem;
+  border-bottom: 1px solid var(--color-borde-suave);
+  white-space: nowrap;
+}
+
+.panel-salida__ir th {
+  color: var(--color-texto-mute);
+  font-family: var(--fuente-texto);
+  font-size: 0.78rem;
+  background: var(--color-tarjeta);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.panel-salida__ir-regla td {
+  background: var(--color-acento-fondo);
+  color: var(--color-acento);
+  font-family: var(--fuente-texto);
+  font-weight: 700;
+}
+
+.panel-salida__ir-indice {
+  color: var(--color-texto-mute);
+}
+
+.panel-salida__ir-op {
+  color: var(--color-acento);
+  font-weight: 700;
+}

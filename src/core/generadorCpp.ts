@@ -1,97 +1,68 @@
-// AST -> sketch .ino para ESP32 (Arduino framework).
-// Solo se invoca sobre programas que ya pasaron verificarPrograma() sin errores.
-import type { Expr, Programa, Regla, Sentencia } from "./ast.ts";
-import { ACTUADORES, buscarActuador, buscarCultivo, buscarSensor, SENSORES } from "./tipos.ts";
-import { programaValido, verificarPrograma } from "./analizadorTipos.ts";
-
-function pinesUsados(programa: Programa) {
-  const sensoresUsados = new Set<string>();
-  const actuadoresUsados = new Set<string>();
-
-  const visitarExpr = (e: Expr) => {
-    if (e.clase === "Comparacion") {
-      sensoresUsados.add(e.izquierda.sensor);
-      if (e.derecha.clase === "RefSensor") sensoresUsados.add(e.derecha.sensor);
-      if (e.derecha.clase === "RefActuador") actuadoresUsados.add(e.derecha.actuador);
-    } else {
-      visitarExpr(e.izquierda);
-      visitarExpr(e.derecha);
-    }
-  };
-  const visitarSentencia = (s: Sentencia) => {
-    if (s.clase === "AccionEstado") actuadoresUsados.add(s.actuador);
-  };
-
-  for (const regla of programa.reglas) {
-    visitarExpr(regla.condicion);
-    regla.acciones.forEach(visitarSentencia);
-  }
-
-  return {
-    sensores: SENSORES.filter((s) => sensoresUsados.has(s.id)),
-    actuadores: ACTUADORES.filter((a) => actuadoresUsados.has(a.id)),
-  };
-}
+// Código intermedio (cuádruplos) -> sketch .ino para ESP32 (Arduino framework).
+// El generador no lee el AST: solo traduce la lista de cuádruplos que produce
+// codigoIntermedio.ts, que ya pasó por el gate semántico.
+import type { Programa } from "./ast.ts";
+import { generarCodigoIntermedio, type BloqueReglaIR, type Cuadruplo, type ProgramaIR } from "./codigoIntermedio.ts";
+import { buscarActuador, buscarCultivo, buscarSensor } from "./tipos.ts";
 
 function operadorCpp(op: string): string {
-  switch (op) {
+  return op === "=" ? "==" : op;
+}
+
+function instruccionACpp(c: Cuadruplo): string {
+  switch (c.op) {
+    case "<":
+    case ">":
     case "=":
-      return "==";
     case "<=":
-      return "<=";
     case ">=":
-      return ">=";
-    default:
-      return op;
+      return `  bool ${c.resultado} = lectura_${c.arg1} ${operadorCpp(c.op)} ${c.arg2};`;
+    case "Y":
+      return `  bool ${c.resultado} = ${c.arg1} && ${c.arg2};`;
+    case "O":
+      return `  bool ${c.resultado} = ${c.arg1} || ${c.arg2};`;
+    case "SALTARF":
+      // Cada regla es un único SALTARF/ETIQUETA bien anidado: se emite como if.
+      return `  if (${c.arg1}) {`;
+    case "ENCENDER":
+      return `    digitalWrite(PIN_${c.arg1}, HIGH);`;
+    case "APAGAR":
+      return `    digitalWrite(PIN_${c.arg1}, LOW);`;
+    case "ESPERAR":
+      return `    delay(${Number(c.arg1) * 1000}); // ESPERAR ${c.arg1} s`;
+    case "ETIQUETA":
+      return `  }`;
+    case "LEER":
+      throw new Error("LEER solo aparece antes de la primera regla.");
   }
 }
 
-function exprACpp(nodo: Expr): string {
-  if (nodo.clase === "Comparacion") {
-    const sensor = buscarSensor(nodo.izquierda.sensor);
-    const variable = `lectura_${sensor?.id ?? nodo.izquierda.sensor}`;
-    // El analizador de tipos (verificarPrograma, llamado más abajo) ya garantiza
-    // que solo llegan comparaciones SENSOR-vs-número: si derecha no es Literal
-    // el programa nunca pasa el gate de generarCpp().
-    if (nodo.derecha.clase !== "Literal") {
-      throw new Error(`Comparación no soportada en C++: ${variable} contra un identificador, no un número.`);
-    }
-    return `${variable} ${operadorCpp(nodo.operador)} ${nodo.derecha.valor}`;
-  }
-  const op = nodo.operador === "Y" ? "&&" : "||";
-  return `(${exprACpp(nodo.izquierda)}) ${op} (${exprACpp(nodo.derecha)})`;
-}
-
-function sentenciaACpp(nodo: Sentencia): string {
-  if (nodo.clase === "AccionEstado") {
-    const actuador = buscarActuador(nodo.actuador);
-    const estado = nodo.accion === "ENCENDER" ? "HIGH" : "LOW";
-    return `digitalWrite(PIN_${actuador?.id ?? nodo.actuador}, ${estado});`;
-  }
-  return `delay(${nodo.segundos * 1000}); // ESPERAR ${nodo.segundos} s`;
-}
-
-function reglaACpp(regla: Regla): string {
-  const condicion = exprACpp(regla.condicion);
-  const cuerpo = regla.acciones.map((s) => `    ${sentenciaACpp(s)}`).join("\n");
-  const comentarioHorario = regla.restriccionHoraria
-    ? ` // válida entre ${regla.restriccionHoraria.desde} y ${regla.restriccionHoraria.hasta}`
+function reglaACpp(ir: ProgramaIR, bloque: BloqueReglaIR): string {
+  const comentarioHorario = bloque.restriccionHoraria
+    ? ` // válida entre ${bloque.restriccionHoraria.desde} y ${bloque.restriccionHoraria.hasta}`
     : "";
-  return `  // Regla: ${regla.nombre}${comentarioHorario}\n  if (${condicion}) {\n${cuerpo}\n  }`;
+  const cuerpo = ir.cuadruplos
+    .slice(bloque.desde, bloque.hasta + 1)
+    .map(instruccionACpp)
+    .join("\n");
+  return `  // Regla: ${bloque.nombre}${comentarioHorario}\n${cuerpo}`;
 }
 
-export function generarCpp(programa: Programa): string {
-  const resultados = verificarPrograma(programa);
-  if (!programaValido(programa)) {
-    const detalle = resultados
-      .filter((r) => r.errores.length > 0)
-      .map((r) => `  - ${r.reglaId}: ${r.errores.map((e) => `[${e.regla}] ${e.mensaje}`).join("; ")}`)
-      .join("\n");
-    throw new Error(`No se puede generar código: hay errores de tipos.\n${detalle}`);
-  }
+export function irACpp(ir: ProgramaIR): string {
+  const sensores = ir.cuadruplos
+    .filter((c) => c.op === "LEER")
+    .map((c) => buscarSensor(c.arg1 ?? ""))
+    .filter((s) => s !== undefined);
 
-  const cultivo = buscarCultivo(programa.cultivo);
-  const { sensores, actuadores } = pinesUsados(programa);
+  const idsActuadores: string[] = [];
+  for (const c of ir.cuadruplos) {
+    if ((c.op === "ENCENDER" || c.op === "APAGAR") && c.arg1 && !idsActuadores.includes(c.arg1)) {
+      idsActuadores.push(c.arg1);
+    }
+  }
+  const actuadores = idsActuadores.map((id) => buscarActuador(id)).filter((a) => a !== undefined);
+
+  const cultivo = buscarCultivo(ir.cultivo);
 
   const defsPines = [
     ...sensores.map((s) => `#define PIN_${s.id} ${s.pin}`),
@@ -111,10 +82,10 @@ export function generarCpp(programa: Programa): string {
     )
     .join("\n");
 
-  const reglas = programa.reglas.map(reglaACpp).join("\n\n");
+  const reglas = ir.reglas.map((b) => reglaACpp(ir, b)).join("\n\n");
 
   return `// Generado por Agrocode a partir de las reglas del agricultor.
-// Cultivo: ${cultivo?.etiqueta ?? programa.cultivo}
+// Cultivo: ${cultivo?.etiqueta ?? ir.cultivo}
 // NO editar a mano: los cambios se pierden al recompilar desde la app.
 
 ${defsPines}
@@ -133,4 +104,10 @@ ${reglas}
   delay(1000); // ciclo de evaluación
 }
 `;
+}
+
+// Lanza excepción si el programa tiene errores bloqueantes (el gate está en
+// generarCodigoIntermedio): nunca se genera C++ de un programa inválido.
+export function generarCpp(programa: Programa): string {
+  return irACpp(generarCodigoIntermedio(programa));
 }
