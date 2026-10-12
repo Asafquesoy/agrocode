@@ -5,6 +5,10 @@
 // concluyó. Los casos de prueba van en archivos .agro sueltos, típicamente
 // dentro de examples/ (hay una plantilla en examples/template.agro).
 //
+// Los .agro se analizan contra el dispositivo de ejemplo
+// (src/compiler/exampleDevice.ts): ahí están los sensores y equipos que sus
+// identificadores dan por registrados.
+//
 // Uso:
 //   npm run analyze -- examples/mi-caso.agro   analiza un archivo
 //   npm run analyze -- examples/               analiza todos los .agro de la carpeta
@@ -16,6 +20,7 @@ import { parseProgram } from "../src/compiler/parser.ts";
 import { blockingErrors, checkProgram } from "../src/compiler/typeChecker.ts";
 import { isBlocking } from "../src/compiler/errors.ts";
 import { generateIntermediateCode, intermediateCodeToText } from "../src/compiler/intermediateCode.ts";
+import { EXAMPLE_REGISTRY } from "../src/compiler/exampleDevice.ts";
 
 function readStdin(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -72,7 +77,7 @@ function analyzeText(name: string, text: string): boolean {
     return reportMatch("RECHAZADO");
   }
 
-  const results = checkProgram(program);
+  const results = checkProgram(program, EXAMPLE_REGISTRY);
 
   for (const r of results) {
     const errors = r.errors.filter(isBlocking);
@@ -99,7 +104,7 @@ function analyzeText(name: string, text: string): boolean {
   if (valid) {
     console.log("\nCódigo intermedio (cuádruplos):");
     console.log(
-      intermediateCodeToText(generateIntermediateCode(program))
+      intermediateCodeToText(generateIntermediateCode(program, EXAMPLE_REGISTRY))
         .split("\n")
         .map((l) => `  ${l}`)
         .join("\n")

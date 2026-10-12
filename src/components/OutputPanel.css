@@ -323,3 +323,37 @@
   color: var(--color-accent);
   font-weight: 700;
 }
+
+/* Pestaña Análisis: tipo de dato inferido por sensor */
+.output-panel__inferred {
+  margin-bottom: 0.9rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-card);
+}
+
+.output-panel__inferred-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.output-panel__inferred ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.output-panel__inferred li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.output-panel__inferred-type {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+}

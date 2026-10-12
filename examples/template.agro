@@ -3,10 +3,10 @@
 // el CLI (npm run analyze -- examples/) recorre todos los .agro de esta carpeta.
 //
 // Todo SENSOR/ACTUADOR usado en una regla debe declararse antes.
-// Identificadores válidos hoy (catálogo en src/compiler/catalog.ts):
+// Identificadores válidos aquí (dispositivo de ejemplo, src/compiler/exampleDevice.ts):
 //   SENSORES:  HUMEDAD_SUELO, TEMPERATURA, HUMEDAD_AIRE, LLUVIA
 //   ACTUADORES: BOMBA_PRINCIPAL, VALVULA_NORTE, VALVULA_SUR, ALARMA
-//   CULTIVOS:  CANA, CITRICOS, MAIZ, SORGO
+//   CULTIVO:   CANA
 
 CULTIVO CANA;
 SENSOR HUMEDAD_SUELO;

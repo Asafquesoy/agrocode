@@ -6,6 +6,7 @@
 import type { Comparison, Expr, Logical, Operand, Program, Rule, StateAction, Statement, WaitAction } from "./ast.ts";
 import type { DataType } from "./catalog.ts";
 import { semanticError, isBlocking, type SemanticError } from "./errors.ts";
+import type { DeviceRegistry } from "./device.ts";
 import { buildSymbolTable, type SymbolTable } from "./symbolTable.ts";
 
 export interface TypeRule {
@@ -187,8 +188,8 @@ function checkRule(rule: Rule, table: SymbolTable): RuleCheckResult {
   return { ruleId: rule.id, inferredType, appliedRules, errors };
 }
 
-export function checkProgram(program: Program): RuleCheckResult[] {
-  const table = buildSymbolTable(program);
+export function checkProgram(program: Program, registry: DeviceRegistry): RuleCheckResult[] {
+  const table = buildSymbolTable(program, registry);
   const results = program.rules.map((rule) => checkRule(rule, table));
 
   // Los errores de declaración (I1-I6) no pertenecen a ninguna regla puntual;
