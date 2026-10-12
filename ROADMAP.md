@@ -4,7 +4,7 @@ Fuente de verdad de las fases de desarrollo, pensadas para implementarse por par
 distintas. El alcance objetivo (qué se incluye y qué queda deliberadamente fuera) está en
 `ALCANCE.txt`.
 
-**Fase actual: 0 (completada en esta sesión) → siguiente: Fase 1**
+**Fase actual: 1 (completada) → siguiente: Fase 4** (orden acordado: 1 → 4 → 5; la Fase 2 después)
 
 Decisiones fijas (no re-litigar):
 - Stack: **Tauri 2 + React 19 + TypeScript**, no Flutter (el PDF fuente sugiere Flutter/Dart, pero se
@@ -20,7 +20,7 @@ Decisiones fijas (no re-litigar):
 
 - [x] **Fase 0 — Dejar solo la Receta.** Dejar una sola interfaz, limpiar App.tsx/App.css,
       quitar dependencia `blockly` y scripts de Playwright muertos, actualizar README/CLAUDE.md.
-- [ ] **Fase 1 — Exportar el sketch a disco.** `tauri-plugin-fs` + `tauri-plugin-dialog`, botón
+- [x] **Fase 1 — Exportar el sketch a disco.** `tauri-plugin-fs` + `tauri-plugin-dialog`, botón
       "Guardar .ino" y "Copiar" en `OutputPanel.tsx`. No requiere ESP32.
 - [ ] **Fase 2 — Motor de compilación (`arduino-cli` en segundo plano).** Sidecar de `arduino-cli`,
       comandos Rust `verificar_entorno`/`instalar_core`/`compilar`, streaming de progreso por eventos

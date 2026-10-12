@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Program } from "../compiler/ast";
 import { isBlocking } from "../compiler/errors";
 import { blockingErrors, checkProgram, type RuleCheckResult } from "../compiler/typeChecker";
@@ -6,8 +6,9 @@ import { programToText } from "../compiler/printer";
 import { parseProgram } from "../compiler/parser";
 import { generateCpp } from "../compiler/cppGenerator";
 import { cell, generateIntermediateCode, type IRProgram } from "../compiler/intermediateCode";
-import { WarningIcon } from "./Icons";
+import { CopyIcon, SaveIcon, WarningIcon } from "./Icons";
 import { CppLine, LanguageLine } from "./CodeHighlight";
+import { copySketch, saveSketch } from "./exportSketch";
 import "./OutputPanel.css";
 
 type Tab = "language" | "types" | "ir" | "cpp" | "write";
@@ -174,6 +175,14 @@ const TABS: { id: Tab; label: string }[] = [
 
 export function OutputPanel({ program }: { program: Program | null }) {
   const [tab, setTab] = useState<Tab>("language");
+  const [exportNotice, setExportNotice] = useState<{ text: string; error: boolean } | null>(null);
+
+  // Aviso breve que se borra solo a los ~2 s.
+  useEffect(() => {
+    if (!exportNotice) return;
+    const timer = setTimeout(() => setExportNotice(null), 2000);
+    return () => clearTimeout(timer);
+  }, [exportNotice]);
 
   const results = useMemo(() => (program ? checkProgram(program) : []), [program]);
   // Solo los errores bloqueantes impiden generar C++; una ADVERTENCIA (p. ej.
@@ -202,6 +211,25 @@ export function OutputPanel({ program }: { program: Program | null }) {
   }, [program, hasErrors]);
 
   const appliedRules = useMemo(() => [...new Set(results.flatMap((r) => r.appliedRules))], [results]);
+
+  const handleSave = async () => {
+    if (!program) return;
+    try {
+      const saved = await saveSketch(cppText, program.crop);
+      if (saved) setExportNotice({ text: "Archivo guardado", error: false });
+    } catch (e) {
+      setExportNotice({ text: `No se pudo guardar: ${(e as Error).message ?? e}`, error: true });
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await copySketch(cppText);
+      setExportNotice({ text: "Copiado", error: false });
+    } catch (e) {
+      setExportNotice({ text: `No se pudo copiar: ${(e as Error).message ?? e}`, error: true });
+    }
+  };
 
   return (
     <div className="output-panel">
@@ -249,7 +277,25 @@ export function OutputPanel({ program }: { program: Program | null }) {
               <WarningIcon size={16} /> Corrige los errores de tipos antes de generar el código para el ESP32.
             </p>
           ) : (
-            <CodeBlock lines={cppText.split("\n")} highlight={(t) => <CppLine text={t} />} />
+            <>
+              <div className="output-panel__actions">
+                <button onClick={handleSave}>
+                  <SaveIcon size={16} /> Guardar .ino
+                </button>
+                <button onClick={handleCopy}>
+                  <CopyIcon size={16} /> Copiar
+                </button>
+                {exportNotice && (
+                  <span
+                    role="status"
+                    className={`output-panel__notice ${exportNotice.error ? "output-panel__notice--error" : ""}`}
+                  >
+                    {exportNotice.text}
+                  </span>
+                )}
+              </div>
+              <CodeBlock lines={cppText.split("\n")} highlight={(t) => <CppLine text={t} />} />
+            </>
           ))}
 
         {tab === "write" && <WriteTab />}
