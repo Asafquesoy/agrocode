@@ -67,6 +67,6 @@ Además del app, hay un CLI del analizador (`scripts/analyze.ts`, `npm run analy
 
 ### Capa Tauri: `src-tauri/`
 
-Backend nativo mínimo (Rust) — solo ventana y plugins (`plugin-opener`), sin comandos custom de Tauri por ahora (el único comando es el `greet` de scaffold). `tauri.conf.json` fija el puerto de dev en 5173 y apunta `frontendDist` a `../dist`. Si se agregan comandos Rust invocables desde el frontend (`#[tauri::command]`), se registran en `src-tauri/src/lib.rs`.
+Backend nativo mínimo (Rust) — solo ventana y plugins (`plugin-opener`, `plugin-dialog`, `plugin-fs`), sin comandos custom de Tauri por ahora (el único comando es el `greet` de scaffold). Los permisos de los plugins están en `src-tauri/capabilities/default.json` (`dialog:allow-save`, `fs:allow-write-text-file`). `tauri.conf.json` fija el puerto de dev en 5173 y apunta `frontendDist` a `../dist`. Si se agregan comandos Rust invocables desde el frontend (`#[tauri::command]`), se registran en `src-tauri/src/lib.rs`.
 
-Hoy la app **solo muestra** el C++ generado; no hay guardado a disco, ni invocación de `arduino-cli`, ni detección de puerto serial, ni flasheo, ni persistencia de proyectos. Ese es el trabajo pendiente descrito en `ROADMAP.md`.
+Hoy la app muestra el C++ generado y permite **guardarlo como `.ino`** (diálogo nativo) o **copiarlo** desde la pestaña C++ de `OutputPanel.tsx` (`src/components/exportSketch.ts`; fuera de Tauri, en `npm run dev`, el guardado cae a una descarga del navegador). No hay invocación de `arduino-cli`, ni detección de puerto serial, ni flasheo, ni persistencia de proyectos. Ese es el trabajo pendiente descrito en `ROADMAP.md`.
