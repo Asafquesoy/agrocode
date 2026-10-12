@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import type { Comparison, Expr, Rule } from "../compiler/ast";
-import { deviceRegistry, deviceToProgram, emptyDevice, type Device } from "../compiler/device";
+import { deviceRegistry, deviceToProgram, type Device } from "../compiler/device";
+import type { StoredDevice } from "../compiler/deviceFile";
 import { pendingSuggestions } from "./suggestions";
+import { useAutosave, type SaveStatus } from "./useAutosave";
 import { RuleWizard, canEditInWizard } from "./RuleWizard";
 import { DeviceSetup } from "./DeviceSetup";
 import { OutputPanel } from "../components/OutputPanel";
-import { CropIcon, EditIcon, PlusIcon, RemoveIcon } from "../components/Icons";
+import { BackIcon, CropIcon, EditIcon, PlusIcon, RemoveIcon } from "../components/Icons";
 import "./RecipeEditor.css";
 
 // El slider siempre edita la primera comparación que aparezca en la regla.
@@ -31,9 +33,17 @@ function withUpdatedValue(expr: Expr, value: number): Expr {
 
 type View = "SETUP" | "RULES";
 
-export function RecipeEditor() {
-  const [device, setDevice] = useState<Device>(() => emptyDevice());
-  const [view, setView] = useState<View>("SETUP");
+const SAVE_LABELS: Record<SaveStatus, string> = {
+  saved: "Guardado",
+  saving: "Guardando…",
+  error: "No se pudo guardar tus cambios",
+};
+
+export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack: () => void }) {
+  const [device, setDevice] = useState<Device>(stored.device);
+  // Un dispositivo nuevo (sin cultivo) arranca en Configurar; uno ya armado, en sus reglas.
+  const [view, setView] = useState<View>(() => (stored.device.crop.trim() ? "RULES" : "SETUP"));
+  const { status, flush } = useAutosave(stored.id, device);
   // null = asistente cerrado; { rule: undefined } = regla nueva; { rule } = editar.
   const [wizard, setWizard] = useState<{ rule?: Rule } | null>(null);
 
@@ -66,9 +76,41 @@ export function RecipeEditor() {
     setRules((rules) => [...rules, rule]);
   }
 
+  // Se espera al guardado pendiente antes de volver, para que la lista ya
+  // muestre lo último que el agricultor cambió.
+  async function goBack() {
+    await flush();
+    onBack();
+  }
+
+  const header = (
+    <div className="recipe-editor__header">
+      <div className="recipe-editor__header-main">
+        <button className="recipe-editor__back" onClick={() => void goBack()}>
+          <BackIcon size={16} /> Mis dispositivos
+        </button>
+        {view === "RULES" && (
+          <p>
+            <span className="recipe-editor__header-icon">
+              <CropIcon size={18} />
+            </span>
+            <strong>{device.name.trim() || "Mi dispositivo"}</strong> · {registry.cropLabel}
+          </p>
+        )}
+      </div>
+      <div className="recipe-editor__header-actions">
+        <span className={`recipe-editor__save recipe-editor__save--${status}`} role="status">
+          {SAVE_LABELS[status]}
+        </span>
+        {view === "RULES" && <button onClick={() => setView("SETUP")}>Editar sensores y equipos</button>}
+      </div>
+    </div>
+  );
+
   if (view === "SETUP") {
     return (
       <div className="recipe-editor">
+        {header}
         <DeviceSetup device={device} onChange={setDevice} onDone={() => setView("RULES")} />
       </div>
     );
@@ -76,15 +118,7 @@ export function RecipeEditor() {
 
   return (
     <div className="recipe-editor">
-      <div className="recipe-editor__header">
-        <p>
-          <span className="recipe-editor__header-icon">
-            <CropIcon size={18} />
-          </span>
-          <strong>{device.name.trim() || "Mi dispositivo"}</strong> · {registry.cropLabel}
-        </p>
-        <button onClick={() => setView("SETUP")}>Editar sensores y equipos</button>
-      </div>
+      {header}
 
       <div className="recipe-editor__layout">
         <div className="recipe-editor__panel-left">
