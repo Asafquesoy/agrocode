@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { newStoredDevice, type StoredDevice } from "../compiler/deviceFile";
 import { deleteDevice, listDevices, saveDevice, type StoredEntry } from "../storage/deviceStore";
-import { CropIcon, PlusIcon, RemoveIcon, WarningIcon } from "../components/Icons";
+import { AlarmIcon, CropIcon, DropIcon, PlusIcon, RemoveIcon, WarningIcon } from "../components/Icons";
 import { RecipeEditor } from "./RecipeEditor";
 import "./DeviceHome.css";
 
@@ -117,11 +117,31 @@ export function DeviceHome() {
 
       {entries && entries.length === 0 && !loadError && (
         <div className="device-home__welcome">
-          <CropIcon size={36} />
-          <p>Aquí aparecerán tus dispositivos. Crea el primero para registrar tu cultivo, tus sensores y tus equipos.</p>
-          <button className="device-home__new device-home__new--big" onClick={() => void createDevice()}>
-            <PlusIcon size={18} /> Crear mi primer dispositivo
-          </button>
+          <div className="device-home__welcome-intro">
+            <CropIcon size={40} />
+            <h2>Aún no tienes dispositivos</h2>
+            <p>Crea el primero para registrar tu cultivo, tus sensores y tus equipos.</p>
+            <button className="device-home__new device-home__new--big" onClick={() => void createDevice()}>
+              <PlusIcon size={18} /> Crear mi primer dispositivo
+            </button>
+          </div>
+          <ol className="device-home__steps">
+            <li>
+              <CropIcon size={26} />
+              <strong>1. Cuéntanos qué cultivas</strong>
+              <span>Escribe tu cultivo o el proceso que quieres controlar.</span>
+            </li>
+            <li>
+              <DropIcon size={26} />
+              <strong>2. Agrega tus sensores y equipos</strong>
+              <span>Elige lo que mide tu terreno y lo que enciende o apaga.</span>
+            </li>
+            <li>
+              <AlarmIcon size={26} />
+              <strong>3. Arma tus reglas</strong>
+              <span>Dile cuándo regar o avisar, con unos cuantos clics.</span>
+            </li>
+          </ol>
         </div>
       )}
 
@@ -133,7 +153,8 @@ export function DeviceHome() {
                 <button className="device-home__open" onClick={() => setOpen(entry.stored)}>
                   <span className="device-home__name">{entry.stored.device.name.trim() || "Mi dispositivo"}</span>
                   <span className="device-home__crop">
-                    <CropIcon size={14} /> {entry.stored.device.crop.trim() || "Sin cultivo todavía"}
+                    <CropIcon size={14} />
+                    <span>{entry.stored.device.crop.trim() || "Sin cultivo todavía"}</span>
                   </span>
                   <span className="device-home__meta">
                     {entry.stored.device.sensors.length} sensores · {entry.stored.device.actuators.length} equipos ·{" "}
@@ -178,6 +199,11 @@ export function DeviceHome() {
               </li>
             )
           )}
+          <li className="device-home__add">
+            <button onClick={() => void createDevice()}>
+              <PlusIcon size={20} /> Nuevo dispositivo
+            </button>
+          </li>
         </ul>
       )}
     </div>
