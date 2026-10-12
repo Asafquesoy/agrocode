@@ -35,3 +35,8 @@ src-tauri/gen/schemas
 .env
 .env.*
 !.env.example
+
+# Documentos
+*.pdf
+*.docx
+
