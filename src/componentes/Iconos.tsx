@@ -1,7 +1,7 @@
 // Iconografía de la app: capa fina sobre lucide-react.
 // Se conservan los mismos nombres de exportación e íconos de mapeo que la versión
-// dibujada a mano anterior, para que ningún punto de uso (PanelSalida, PanelEvidencia,
-// RecetaPropuesta, AsistenteNuevaRegla) tenga que cambiar su import.
+// dibujada a mano anterior, para que ningún punto de uso (PanelSalida, RecetaPropuesta,
+// AsistenteNuevaRegla) tenga que cambiar su import.
 import {
   Wheat,
   Citrus,

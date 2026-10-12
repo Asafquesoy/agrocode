@@ -78,15 +78,6 @@ export function RecetaPropuesta() {
     setMostrarAsistente(false);
   }
 
-  // Usado por la pestaña "Evidencia" para cargar un caso de prueba tal cual
-  // vino del parser. A propósito NO recalcula declaraciones con
-  // declaracionesUsadas(): un caso pensado para fallar por I1/I2/I6 depende de
-  // que las declaraciones del caso no coincidan exactamente con el uso.
-  function cargarProgramaDeCaso(p: Programa) {
-    setCultivo(p.cultivo);
-    setPrograma(p);
-  }
-
   if (!cultivo || !programa) {
     return (
       <div className="receta-propuesta">
@@ -176,7 +167,7 @@ export function RecetaPropuesta() {
         </div>
 
         <div className="receta-propuesta__panel-der">
-          <PanelSalida programa={programa} onCargarPrograma={cargarProgramaDeCaso} />
+          <PanelSalida programa={programa} />
         </div>
       </div>
 

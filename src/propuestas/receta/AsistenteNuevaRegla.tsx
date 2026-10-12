@@ -10,8 +10,6 @@ import {
   literalDecimal,
   literalEntero,
   logica,
-  refActuador,
-  refSensor,
 } from "../../core/ast";
 import { verificarPrograma } from "../../core/analizadorTipos";
 import {
@@ -24,7 +22,6 @@ import {
   IconoReloj,
   IconoValvula,
   IconoVerificado,
-  IconoAdvertencia,
 } from "../../componentes/Iconos";
 import "./AsistenteNuevaRegla.css";
 
@@ -37,11 +34,9 @@ const PASOS: { id: Paso; etiqueta: string }[] = [
   { id: "RESUMEN", etiqueta: "Confirmar" },
 ];
 
-// Con qué se compara la medición elegida. VALOR/VALOR_DECIMAL son el caso
-// normal (T1/T2); MEDICION y EQUIPO son las equivocaciones que un agricultor
-// puede cometer de verdad — comparar dos mediciones entre sí (T9) o comparar
-// una medición con un equipo (T6) — y que el analizador debe poder rechazar.
-type ModoComparacion = "VALOR" | "VALOR_DECIMAL" | "MEDICION" | "EQUIPO";
+// Con qué se compara la medición elegida: un número entero (T1) o un número
+// con decimales (T2).
+type ModoComparacion = "VALOR" | "VALOR_DECIMAL";
 
 interface EstadoCondicion {
   sensor: string;
@@ -49,8 +44,6 @@ interface EstadoCondicion {
   modo: ModoComparacion;
   valor: number;
   valorDecimal: number;
-  otraMedicion: string;
-  otroEquipo: string;
 }
 
 function condicionInicial(): EstadoCondicion {
@@ -60,23 +53,16 @@ function condicionInicial(): EstadoCondicion {
     modo: "VALOR",
     valor: 30,
     valorDecimal: 30,
-    otraMedicion: SENSORES[1]?.id ?? SENSORES[0].id,
-    otroEquipo: ACTUADORES[0].id,
   };
 }
 
 function construirComparacion(c: EstadoCondicion): Comparacion {
   if (c.modo === "VALOR") return comparacionCon(c.sensor, c.operador, literalEntero(c.valor));
-  if (c.modo === "VALOR_DECIMAL") return comparacionCon(c.sensor, c.operador, literalDecimal(c.valorDecimal));
-  if (c.modo === "MEDICION") return comparacionCon(c.sensor, c.operador, refSensor(c.otraMedicion));
-  return comparacionCon(c.sensor, c.operador, refActuador(c.otroEquipo));
+  return comparacionCon(c.sensor, c.operador, literalDecimal(c.valorDecimal));
 }
 
-// El objetivo de ENCENDER/APAGAR normalmente es un ACTUADOR, pero el paso
-// QUE_HAGO también permite elegir una medición (a propósito, para poder
-// provocar I4/T8) — busca la etiqueta legible en el catálogo que corresponda.
 function etiquetaObjetivo(id: string): string {
-  return ACTUADORES.find((a) => a.id === id)?.etiqueta ?? SENSORES.find((s) => s.id === id)?.etiqueta ?? id;
+  return ACTUADORES.find((a) => a.id === id)?.etiqueta ?? id;
 }
 
 function textoOperador(op: OperadorRelacional): string {
@@ -86,14 +72,8 @@ function textoOperador(op: OperadorRelacional): string {
 function descripcionCondicion(c: EstadoCondicion): string {
   const sensor = SENSORES.find((s) => s.id === c.sensor);
   const nombre = sensor?.etiqueta.toLowerCase() ?? c.sensor;
-  if (c.modo === "VALOR") return `${nombre} ${textoOperador(c.operador)} ${c.valor}${sensor?.unidad ?? ""}`;
-  if (c.modo === "VALOR_DECIMAL") return `${nombre} ${textoOperador(c.operador)} ${c.valorDecimal}${sensor?.unidad ?? ""}`;
-  if (c.modo === "MEDICION") {
-    const otra = SENSORES.find((s) => s.id === c.otraMedicion);
-    return `${nombre} ${textoOperador(c.operador)} ${otra?.etiqueta.toLowerCase() ?? c.otraMedicion}`;
-  }
-  const equipo = ACTUADORES.find((a) => a.id === c.otroEquipo);
-  return `${nombre} ${textoOperador(c.operador)} ${equipo?.etiqueta.toLowerCase() ?? c.otroEquipo}`;
+  const valor = c.modo === "VALOR" ? c.valor : c.valorDecimal;
+  return `${nombre} ${textoOperador(c.operador)} ${valor}${sensor?.unidad ?? ""}`;
 }
 
 interface EstadoAsistente {
@@ -103,7 +83,7 @@ interface EstadoAsistente {
   condicion2: EstadoCondicion;
   tipoAccion: "ESTADO" | "TIEMPO";
   accionEstadoTipo: "ENCENDER" | "APAGAR";
-  objetivoAccion: string; // id de un ACTUADOR o, por error, de un SENSOR
+  objetivoAccion: string; // id de un ACTUADOR
   segundos: number;
 }
 
@@ -118,10 +98,9 @@ const estadoInicial: EstadoAsistente = {
   segundos: 15,
 };
 
-// Selector "¿con qué lo comparo?": un número (T1), un número con decimales
-// (T2), otra medición (T9 si se equivoca) o un equipo (T6 si se equivoca).
-// Se usa dos veces: para la condición principal y para la condición opcional
-// que se agrega con "Y además" / "O también".
+// Selector de condición: medición, operador y un número (entero o con
+// decimales). Se usa dos veces: para la condición principal y para la
+// condición opcional que se agrega con "Y además" / "O también".
 function SelectorComparacion({
   cond,
   onCambiar,
@@ -163,12 +142,6 @@ function SelectorComparacion({
         >
           Un número con decimales
         </button>
-        <button className={cond.modo === "MEDICION" ? "seleccionado" : ""} onClick={() => onCambiar({ ...cond, modo: "MEDICION" })}>
-          Otra medición
-        </button>
-        <button className={cond.modo === "EQUIPO" ? "seleccionado" : ""} onClick={() => onCambiar({ ...cond, modo: "EQUIPO" })}>
-          Un equipo
-        </button>
       </div>
 
       {cond.modo === "VALOR" && (
@@ -201,36 +174,6 @@ function SelectorComparacion({
         </p>
       )}
 
-      {cond.modo === "MEDICION" && (
-        <div className="asistente__opciones-grandes">
-          {SENSORES.filter((s) => s.id !== cond.sensor).map((s) => (
-            <button
-              key={s.id}
-              className={s.id === cond.otraMedicion ? "seleccionado" : ""}
-              onClick={() => onCambiar({ ...cond, otraMedicion: s.id })}
-            >
-              {s.etiqueta}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {cond.modo === "EQUIPO" && (
-        <div className="asistente__opciones-grandes">
-          {ACTUADORES.map((a) => {
-            const Icono = ICONOS_ACTUADOR[a.id] ?? IconoAlarma;
-            return (
-              <button
-                key={a.id}
-                className={a.id === cond.otroEquipo ? "seleccionado" : ""}
-                onClick={() => onCambiar({ ...cond, otroEquipo: a.id })}
-              >
-                <Icono size={18} /> {a.etiqueta}
-              </button>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
@@ -268,32 +211,15 @@ export function AsistenteNuevaRegla({
     return { id: "regla-candidata", nombre: descripcion, condicion, acciones: [accion] };
   }, [estado]);
 
-  // Revisión en vivo con el analizador real: el mismo verificarPrograma que
-  // usa PanelSalida, sobre un programa de un solo renglón con este cultivo y
-  // esta regla. No es una simulación aparte del analizador semántico.
-  //
-  // verificarPrograma() devuelve un resultado por regla y, si hay errores de
-  // identificador, antepone uno extra con reglaId "(declaraciones)" — hay que
-  // recorrer TODOS los resultados, no solo el primero, porque un mismo error
-  // (p. ej. "encender una medición") produce a la vez un error de
-  // identificador (I4, en "(declaraciones)") y un error de tipos (T8, en la
-  // regla); quedarse con el primero perdería el segundo.
-  const revision = useMemo(() => {
+  // Resguardo silencioso: con las opciones del asistente la regla siempre
+  // debería ser válida; si no lo fuera, no se deja guardar.
+  const reglaValida = useMemo(() => {
     const programaCandidato: Programa = {
       cultivo: cultivoId,
       declaraciones: declaracionesUsadas([reglaCandidata]),
       reglas: [reglaCandidata],
     };
-    const resultados = verificarPrograma(programaCandidato);
-    const errores = resultados.flatMap((r) => r.errores.filter((e) => e.categoria !== "ADVERTENCIA"));
-    const advertencias = resultados.flatMap((r) => r.errores.filter((e) => e.categoria === "ADVERTENCIA"));
-    const resultadoRegla = resultados.find((r) => r.reglaId === reglaCandidata.id);
-    return {
-      errores,
-      advertencias,
-      reglasAplicadas: resultadoRegla?.reglasAplicadas ?? [],
-      tipoInferido: resultadoRegla?.tipoInferido,
-    };
+    return !verificarPrograma(programaCandidato).some((r) => r.errores.some((e) => e.categoria !== "ADVERTENCIA"));
   }, [reglaCandidata, cultivoId]);
 
   function finalizar() {
@@ -387,18 +313,6 @@ export function AsistenteNuevaRegla({
                   );
                 })}
               </div>
-              <p className="asistente__submodo-etiqueta">Mediciones (no son equipos)</p>
-              <div className="asistente__opciones-grandes">
-                {SENSORES.map((s) => (
-                  <button
-                    key={s.id}
-                    className={s.id === estado.objetivoAccion ? "seleccionado" : ""}
-                    onClick={() => setEstado((st) => ({ ...st, objetivoAccion: s.id }))}
-                  >
-                    {s.etiqueta}
-                  </button>
-                ))}
-              </div>
             </>
           )}
 
@@ -421,9 +335,10 @@ export function AsistenteNuevaRegla({
           <h3>¿Cuánto tiempo esperar?</h3>
           <input
             type="number"
-            step="any"
+            min={1}
+            step={1}
             value={estado.segundos}
-            onChange={(e) => setEstado((s) => ({ ...s, segundos: Number(e.target.value) }))}
+            onChange={(e) => setEstado((s) => ({ ...s, segundos: Math.max(1, Math.round(Number(e.target.value))) }))}
           />
           <span> segundos</span>
           <div className="asistente__nav">
@@ -456,44 +371,13 @@ export function AsistenteNuevaRegla({
             .
           </p>
 
-          {revision.errores.length === 0 ? (
-            <div className="asistente__revision asistente__revision--ok">
-              <p className="asistente__revision-mensaje">
-                <IconoVerificado size={18} /> Revisado por el analizador semántico: la regla tiene sentido.
-              </p>
-              {revision.tipoInferido && (
-                <p className="asistente__revision-detalle">
-                  Resultado: <strong>{revision.tipoInferido}</strong> · reglas aplicadas: {revision.reglasAplicadas.join(", ")}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="asistente__revision asistente__revision--error">
-              {revision.errores.map((err, i) => (
-                <p className="asistente__revision-mensaje" key={i}>
-                  <IconoAdvertencia size={18} /> {err.mensaje}
-                  <span className="asistente__revision-detalle"> [{err.categoria}] · regla {err.regla}</span>
-                </p>
-              ))}
-            </div>
-          )}
-
           <div className="asistente__nav">
             <button onClick={() => setPaso(estado.tipoAccion === "TIEMPO" ? "CUANTO_TIEMPO" : "QUE_HAGO")}>
               <IconoFlecha size={16} className="asistente__flecha-atras" /> Atrás
             </button>
-            {revision.errores.length === 0 ? (
-              <button className="asistente__siguiente" onClick={finalizar}>
-                Guardar regla <IconoVerificado size={16} />
-              </button>
-            ) : (
-              <div className="asistente__nav">
-                <button onClick={() => setPaso("CUANDO")}>Corregir</button>
-                <button className="asistente__siguiente" onClick={finalizar}>
-                  Guardar de todos modos
-                </button>
-              </div>
-            )}
+            <button className="asistente__siguiente" onClick={finalizar} disabled={!reglaValida}>
+              Guardar regla <IconoVerificado size={16} />
+            </button>
           </div>
         </div>
       )}
