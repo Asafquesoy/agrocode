@@ -63,6 +63,13 @@ Además del app, hay un CLI del analizador (`scripts/analyze.ts`, `npm run analy
 
 ### Interfaz: `src/recipe/` y `src/components/`
 
+**Regla de diseño — escritorio, no teléfono.** La ventana es de escritorio (mínimo 1024×700, inicial 1280×800 en `tauri.conf.json`); no se hace responsive para móvil. Toda pantalla nueva o modificada debe:
+- aprovechar todo el ancho: nada de `max-width` + `margin: 0 auto` que deje una columna angosta centrada; usar retículas/columnas (tarjetas con `auto-fill`, formularios en 2 columnas, paneles lado a lado), también en los estados vacíos;
+- mantener la acción principal a la vista sin scroll (pie `position: sticky`);
+- cortar con "…" en una línea los textos largos del usuario (nombre, cultivo) en vez de romper cabeceras o tarjetas;
+- usar las scrollbars finas del tema (`base.css`), no las blancas del sistema;
+- verificarse con Playwright (`npm run dev`) a 1024×700, 1366×768 y 1920×1080, antes y después del cambio: sin `scrollWidth > clientWidth` y con el botón principal visible.
+
 `App.tsx` renderiza `DeviceHome.tsx`: la lista de dispositivos guardados (crear, abrir, eliminar con confirmación en línea; un archivo dañado sale como tarjeta aparte sin tumbar la lista). Al abrir uno monta `RecipeEditor` y, al volver, recarga la lista. **No hay botón "Guardar"**: `useAutosave.ts` guarda ~600 ms después del último cambio (y al volver/cerrar), encadenando las escrituras. El formato y su saneado viven en `src/compiler/deviceFile.ts` (puro, `version` para migraciones; descarta aparatos de tipo desconocido y las reglas que los usan, regenera ids duplicados y corrige pines con `resolvePinConflicts`) y el acceso a disco en `src/storage/deviceStore.ts`.
 
 `RecipeEditor.tsx` orquesta dos vistas sobre el `Device` del dispositivo abierto: **Configurar** (`DeviceSetup.tsx`: nombre del dispositivo, cultivo en texto libre, alta/renombrado/baja de sensores y equipos eligiendo su tipo; sin pines a la vista) y **Reglas** (lista de reglas con editar/quitar, sliders de umbral con el rango y la unidad del sensor, tarjetas de reglas sugeridas de `suggestions.ts` según lo registrado, y `RuleWizard.tsx`). Los sliders editan el AST inmutablemente vía funciones recursivas (`editableValue`/`withUpdatedValue` en `RecipeEditor.tsx`) que asumen que el valor editable es siempre el de la primera `Comparison` del árbol de `Logical` (limitación conocida, ver `ROADMAP.md` Fase 8).
