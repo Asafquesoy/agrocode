@@ -76,4 +76,4 @@ recorrer de dos formas, ambas usando el mismo código:
 ## Notas
 
 - El identificador de la app es `com.omara.agrocode-app`.
-- Si `npm run tauri dev` falla por falta de Rust o de las herramientas de compilación de C++, revisar los requisitos previos arriba.
+- Si `npm run tauri dev` falla por falta de Rust o de las herramientas de compilación de C++, revisar los requisitos previos arriba. jajaja pau
