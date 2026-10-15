@@ -3,7 +3,7 @@ import type { Comparison, Expr, Rule } from "../compiler/ast";
 import { deviceRegistry, deviceToProgram, type Device } from "../compiler/device";
 import type { StoredDevice } from "../compiler/deviceFile";
 import { pendingSuggestions } from "./suggestions";
-import { useAutosave, type SaveStatus } from "./useAutosave";
+import { SAVE_LABELS, useAutosave } from "./useAutosave";
 import { RuleWizard, canEditInWizard } from "./RuleWizard";
 import { DeviceSetup } from "./DeviceSetup";
 import { OutputPanel } from "../components/OutputPanel";
@@ -33,16 +33,12 @@ function withUpdatedValue(expr: Expr, value: number): Expr {
 
 type View = "SETUP" | "RULES";
 
-const SAVE_LABELS: Record<SaveStatus, string> = {
-  saved: "Guardado",
-  saving: "Guardando…",
-  error: "No se pudo guardar tus cambios",
-};
-
 export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack: () => void }) {
   const [device, setDevice] = useState<Device>(stored.device);
   // Un dispositivo nuevo (sin cultivo) arranca en Configurar; uno ya armado, en sus reglas.
   const [view, setView] = useState<View>(() => (stored.device.crop.trim() ? "RULES" : "SETUP"));
+  // Mientras el dispositivo nuevo no pasa a sus reglas, Configurar es "Crear dispositivo"; después, "Editar".
+  const [creating, setCreating] = useState(() => !stored.device.crop.trim());
   const { status, flush } = useAutosave(stored.id, device);
   // null = asistente cerrado; { rule: undefined } = regla nueva; { rule } = editar.
   const [wizard, setWizard] = useState<{ rule?: Rule } | null>(null);
@@ -107,12 +103,20 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
     </div>
   );
 
+  // Configurar trae su propia cabecera (ruta + estado de guardado), según el diseño.
   if (view === "SETUP") {
     return (
-      <div className="recipe-editor">
-        {header}
-        <DeviceSetup device={device} onChange={setDevice} onDone={() => setView("RULES")} />
-      </div>
+      <DeviceSetup
+        device={device}
+        creating={creating}
+        saveStatus={status}
+        onChange={setDevice}
+        onBack={() => void goBack()}
+        onDone={() => {
+          setCreating(false);
+          setView("RULES");
+        }}
+      />
     );
   }
 

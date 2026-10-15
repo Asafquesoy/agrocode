@@ -5,6 +5,12 @@ import { saveDevice } from "../storage/deviceStore";
 
 export type SaveStatus = "saved" | "saving" | "error";
 
+export const SAVE_LABELS: Record<SaveStatus, string> = {
+  saved: "Guardado",
+  saving: "Guardando…",
+  error: "No se pudo guardar tus cambios",
+};
+
 const DEBOUNCE_MS = 600;
 
 // Guarda el dispositivo solo, unos instantes después del último cambio. El
