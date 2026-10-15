@@ -266,7 +266,7 @@ export function OutputPanel({ program, registry }: { program: Program | null; re
       <div className="output-panel__content">
         {!program && tab !== "write" && (
           <p className="output-panel__empty">
-            Arma una regla para ver aquí el lenguaje, el análisis de tipos y el código C++ — o prueba la pestaña "Escribir".
+            Todavía no hay reglas. Crea una regla o prueba la pestaña «Escribir».
           </p>
         )}
 
