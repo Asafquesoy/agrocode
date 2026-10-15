@@ -1,10 +1,22 @@
+/* Mi dispositivo: ruta, título y acciones arriba; "Mis reglas" y debajo las
+   pestañas del compilador, ambas a todo el ancho (la ruta, el título y el
+   estado del guardado viven en PageHeader.css). */
 .recipe-editor {
+  width: 100%;
   height: 100%;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  padding: 0.9rem 1.25rem 1.25rem;
+  gap: 20px;
+  padding: 28px var(--page-gutter) 40px;
   color: var(--color-text);
+}
+
+/* Cada bloque conserva su alto natural y la pantalla hace el scroll (si no, el
+   panel de pestañas, con overflow: hidden, se encogería hasta caber). */
+.recipe-editor > * {
+  flex-shrink: 0;
 }
 
 .recipe-editor__intro {
@@ -66,141 +78,135 @@
   color: var(--color-text-muted);
 }
 
-.recipe-editor__header {
+/* --- Título (nombre · cultivo) con el guardado y "Editar sensores y equipos" --- */
+.recipe-editor__top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 0.9rem;
-  color: var(--color-text);
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--color-border);
+  justify-content: space-between;
+  gap: 24px;
 }
 
-/* Una sola línea: un cultivo o nombre largo se corta con "…" en vez de
-   romper la cabecera en varias líneas. */
-.recipe-editor__header p {
-  display: block;
+.recipe-editor__top-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recipe-editor__setup {
+  height: 40px;
+  padding: 0 16px;
+  background: var(--color-surface);
+  color: var(--color-heading);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.recipe-editor__setup:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+/* --- Tarjeta "Mis reglas" --- */
+.recipe-editor__card {
   min-width: 0;
-  margin: 0;
-  font-size: 1rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.recipe-editor__header-icon {
-  display: inline-flex;
-  vertical-align: middle;
-  margin-right: 0.5rem;
-  color: var(--color-accent);
-}
-
-.recipe-editor__header-actions {
-  flex-shrink: 0;
-}
-
-.recipe-editor__header-actions button {
-  white-space: nowrap;
-}
-
-/* --- Layout de dos columnas fijo: receta a la izquierda, consola a la
-   derecha, llenando siempre el alto disponible. La app es solo para PC, así
-   que no hace falta que este layout se convierta en una sola columna. --- */
-.recipe-editor__layout {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 380px minmax(0, 1fr);
-  gap: 1.25rem;
-  align-items: stretch;
-}
-
-.recipe-editor__panel-left {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 0.25rem;
+  gap: 16px;
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
 }
 
-.recipe-editor__panel-right {
-  min-width: 0;
-  min-height: 0;
+.recipe-editor__card-head {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 40px;
 }
 
-.recipe-editor__panel-right > * {
-  flex: 1;
-  min-height: 0;
-}
-
-.recipe-editor__panel-title {
+.recipe-editor__card h2 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+}
+
+.recipe-editor__subhead {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--color-text-muted);
 }
 
+/* Reglas en retícula: tarjetas que se reparten el ancho. */
 .recipe-editor__rules {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
 }
 
 .recipe-editor__rule {
-  background: var(--color-surface);
-  border: none;
-  border-bottom: 1px solid var(--color-border-soft);
-  border-left: 2px solid transparent;
-  border-radius: 0;
-  padding: 0.85rem 1rem;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 4px;
+  padding: 14px 16px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
   color: var(--color-text);
+  transition: border-color 0.15s ease;
   animation: appear 0.3s ease backwards;
   animation-delay: calc(var(--i, 0) * 50ms);
 }
 
-.recipe-editor__rules > .recipe-editor__rule:last-child {
-  border-bottom: none;
-}
-
 .recipe-editor__rule:hover {
-  border-left-color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .recipe-editor__rule-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 8px;
   width: 100%;
 }
 
 .recipe-editor__rule-number {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 12px;
   color: var(--color-text-muted);
 }
 
 .recipe-editor__rule-name {
   flex: 1;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--color-text);
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-heading);
 }
 
 .recipe-editor__remove {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: none;
   background: transparent;
-  padding: 0.25rem;
   cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.recipe-editor__remove:hover {
   color: var(--color-error);
-  display: inline-flex;
+  background: var(--color-error-bg);
 }
 
 .recipe-editor__rule-body {
@@ -297,34 +303,41 @@
 }
 
 .recipe-editor__add {
-  align-self: stretch;
-  background: transparent;
-  color: var(--color-accent);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-panel);
-  padding: 0.65rem 1rem;
-  cursor: pointer;
+  flex: none;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 0.92rem;
-  font-weight: 700;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px 0 18px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
-.recipe-editor__add:hover {
-  border-color: var(--color-accent);
-  background: var(--color-accent-bg);
+.recipe-editor__add:hover:not(:disabled) {
+  background: var(--color-accent-dark);
 }
 
 /* --- Editar regla, sugerencias y avisos --- */
 .recipe-editor__edit {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: none;
   background: transparent;
-  padding: 0.25rem;
   cursor: pointer;
   color: var(--color-accent);
-  display: inline-flex;
+}
+
+.recipe-editor__edit:hover:not(:disabled) {
+  background: var(--color-accent-bg);
 }
 
 .recipe-editor__edit:disabled {
@@ -333,22 +346,22 @@
 }
 
 .recipe-editor__suggestions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
 }
 
 .recipe-editor__suggestion {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.55rem 0.8rem;
+  gap: 10px;
+  padding: 12px 14px;
   background: transparent;
   color: var(--color-text);
-  border: 1px dashed var(--color-border);
+  border: 1px dashed var(--color-scrollbar);
   border-radius: var(--radius-panel);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 14px;
   text-align: left;
   cursor: pointer;
 }
@@ -370,32 +383,6 @@
 
 .recipe-editor__hint {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 14px;
   color: var(--color-text-muted);
-}
-
-/* --- Cabecera: volver a la lista + estado de guardado --- */
-.recipe-editor__header-main,
-.recipe-editor__header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  min-width: 0;
-}
-
-.recipe-editor__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
-}
-
-.recipe-editor__save {
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
-.recipe-editor__save--error {
-  color: var(--color-error);
 }

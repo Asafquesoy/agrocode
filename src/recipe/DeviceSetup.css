@@ -14,61 +14,7 @@
   color: var(--color-text);
 }
 
-/* --- Ruta: volver a la lista / pantalla actual --- */
-.device-setup__crumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
-
-.device-setup__crumb-back {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-  background: none;
-  border: none;
-  border-radius: 0;
-  color: var(--color-accent);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.device-setup__crumb-back:hover {
-  text-decoration: underline;
-}
-
-/* El nombre del dispositivo puede ser largo: una línea con "…". */
-.device-setup__crumb-current {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.device-setup__heading {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.device-setup__heading h1 {
-  margin: 0;
-  font-size: 30px;
-  font-weight: 400;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-}
-
-.device-setup__heading p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-text-muted);
-}
+/* La ruta, el título y el estado del guardado viven en PageHeader.css. */
 
 /* --- Tarjetas --- */
 .device-setup__card {
@@ -105,32 +51,6 @@
   flex: none;
   font-size: 12px;
   color: var(--color-text-muted);
-}
-
-/* Estado del guardado automático (no hay botón "Guardar"). */
-.device-setup__save {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: var(--color-accent-bg);
-  color: var(--color-accent);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.device-setup__save--saving {
-  background: var(--color-card);
-  color: var(--color-text-muted);
-}
-
-.device-setup__save--error {
-  background: var(--color-error-bg);
-  color: var(--color-error);
 }
 
 /* --- Datos del dispositivo --- */

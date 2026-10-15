@@ -1,7 +1,9 @@
+/* Tarjeta a todo el ancho debajo de "Mis reglas": crece con su contenido y
+   la pantalla hace el scroll. */
 .output-panel {
-  height: 100%;
+  min-width: 0;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  border-radius: var(--radius-card);
   background: var(--color-surface);
   color: var(--color-text);
   overflow: hidden;
@@ -9,39 +11,45 @@
   flex-direction: column;
 }
 
+/* Pestañas alineadas a la izquierda; la activa, subrayada. */
 .output-panel__tabs {
   display: flex;
-  background: var(--color-card);
+  padding: 0 12px;
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   overflow-x: auto;
 }
 
 .output-panel__tabs button {
-  flex: 1;
-  padding: 0.7rem 0.6rem;
+  flex: none;
+  height: 44px;
+  padding: 0 14px;
   border: none;
   border-radius: 0;
   background: transparent;
   cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
   color: var(--color-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 6px;
   position: relative;
   transition: color 0.12s ease;
 }
 
+.output-panel__tabs button:hover:not(:disabled) {
+  color: var(--color-heading);
+}
+
 .output-panel__tabs button:disabled {
-  opacity: 0.4;
   cursor: default;
 }
 
 .output-panel__tabs button.active {
-  color: var(--color-accent);
+  color: var(--color-heading);
 }
 
 .output-panel__tabs button.active::after {
@@ -82,10 +90,10 @@
 }
 
 .output-panel__empty {
-  padding: 1.5rem;
+  padding: 20px;
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 .output-panel__code {

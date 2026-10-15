@@ -15,16 +15,14 @@ import { canRegister, resolvePinConflicts } from "../compiler/pins";
 import {
   ACTUATOR_KIND_ICONS,
   ArrowIcon,
-  BackIcon,
   CropIcon,
   PlusIcon,
   RemoveIcon,
   RulesIcon,
   SENSOR_KIND_ICONS,
-  VerifiedIcon,
-  WarningIcon,
 } from "../components/Icons";
-import { SAVE_LABELS, type SaveStatus } from "./useAutosave";
+import type { SaveStatus } from "./useAutosave";
+import { Breadcrumb, SaveBadge } from "./PageHeader";
 import "./DeviceSetup.css";
 
 type Role = "SENSOR" | "ACTUADOR";
@@ -214,17 +212,9 @@ export function DeviceSetup({
 
   return (
     <div className="device-setup">
-      <nav className="device-setup__crumbs" aria-label="Ruta">
-        <button className="device-setup__crumb-back" onClick={onBack}>
-          <BackIcon size={14} /> Mis dispositivos
-        </button>
-        <span aria-hidden="true">/</span>
-        <span className="device-setup__crumb-current" aria-current="page">
-          {creating ? "Crear dispositivo" : device.name.trim() || "Mi dispositivo"}
-        </span>
-      </nav>
+      <Breadcrumb current={creating ? "Crear dispositivo" : device.name.trim() || "Mi dispositivo"} onBack={onBack} />
 
-      <div className="device-setup__heading">
+      <div className="page-heading">
         <h1>{creating ? "Formulario de creación del dispositivo" : "Editar dispositivo"}</h1>
         <p>Cuéntanos qué deseas controlar y agrega los sensores y equipos que cuidarán de tu cultivo.</p>
       </div>
@@ -232,11 +222,7 @@ export function DeviceSetup({
       <section className="device-setup__card" aria-labelledby="device-setup-data">
         <div className="device-setup__card-head">
           <h2 id="device-setup-data">Datos del dispositivo</h2>
-          <span className={`device-setup__save device-setup__save--${saveStatus}`} role="status">
-            {saveStatus === "saved" && <VerifiedIcon size={14} />}
-            {saveStatus === "error" && <WarningIcon size={14} />}
-            {SAVE_LABELS[saveStatus]}
-          </span>
+          <SaveBadge status={saveStatus} />
         </div>
         <div className="device-setup__fields">
           <div className="device-setup__field">
