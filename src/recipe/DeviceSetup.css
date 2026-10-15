@@ -74,7 +74,7 @@
 }
 
 .device-setup input[type="text"]:focus-visible {
-  outline: 2px solid var(--lime);
+  outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
 
@@ -201,7 +201,7 @@
   gap: 0.5rem;
   padding: 0.65rem 1.1rem;
   background: var(--color-accent);
-  color: var(--green-night);
+  color: var(--color-on-accent);
   border: none;
   border-radius: var(--radius-panel);
   font: inherit;
