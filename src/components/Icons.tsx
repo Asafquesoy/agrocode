@@ -21,6 +21,9 @@ import {
   Check,
   Download,
   Copy,
+  PanelsTopLeft,
+  Wifi,
+  Workflow,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -60,6 +63,9 @@ export const PlusIcon = withThinStroke(Plus);
 export const CheckIcon = withThinStroke(Check);
 export const SaveIcon = withThinStroke(Download);
 export const CopyIcon = withThinStroke(Copy);
+export const DevicesIcon = withThinStroke(PanelsTopLeft);
+export const ConnectIcon = withThinStroke(Wifi);
+export const RulesIcon = withThinStroke(Workflow);
 
 // Iconos por *tipo* de aparato (catalog.ts), no por id: los aparatos los
 // registra el agricultor con nombre libre.

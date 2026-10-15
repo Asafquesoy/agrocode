@@ -124,7 +124,7 @@
 }
 
 .tok-number {
-  color: var(--amber);
+  color: var(--color-warning);
 }
 
 .tok-ident {
@@ -235,7 +235,7 @@
 
 .output-panel__warnings {
   margin-top: 0.35rem;
-  color: var(--amber);
+  color: var(--color-warning);
   opacity: 0.9;
 }
 

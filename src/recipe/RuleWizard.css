@@ -132,7 +132,7 @@
 
 .wizard__next {
   background: var(--color-accent);
-  color: var(--green-night);
+  color: var(--color-on-accent);
   border: none;
   border-radius: var(--radius);
   padding: 0.55rem 1.1rem;
@@ -141,7 +141,7 @@
 }
 
 .wizard__next:hover {
-  background: var(--lime-light);
+  background: var(--color-accent-dark);
 }
 
 /* El resumen se presenta como un bloque de código: canaleta a la izquierda,
