@@ -1,222 +1,513 @@
-/* --- Asistente de nueva regla: los 4 pasos guiados para armar una regla --- */
-.wizard {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  color: var(--color-text);
+/* --- Asistente de regla: ventana sobre "Mi dispositivo" con los pasos guiados
+   (¿Cuándo? → ¿Qué hago? → [¿Por cuánto?] → Confirmar). --- */
+.wizard-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(34, 57, 46, 0.42);
+  overscroll-behavior: contain;
 }
 
-/* Indicador de pasos en lenguaje llano: "Paso 1 de 4 · ¿Cuándo?", con
-   conectores hairline entre pasos. */
+.wizard {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: 0 24px 48px rgba(34, 57, 46, 0.18);
+  color: var(--color-text);
+  animation: appear 0.2s ease;
+}
+
+.wizard:focus {
+  outline: none;
+}
+
+.wizard__head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* --- Pasos como píldoras: la actual en verde, las hechas en verde claro --- */
 .wizard__progress {
   display: flex;
-  gap: 0.5rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
   flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .wizard__progress li {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.82rem;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px 0 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-size: 13px;
   color: var(--color-text-muted);
-}
-
-.wizard__progress li:not(:last-child)::after {
-  content: "";
-  width: 1.25rem;
-  height: 1px;
-  background: var(--color-border);
-  margin-left: 0.45rem;
 }
 
 .wizard__progress-circle {
-  width: 1.5rem;
-  height: 1.4rem;
-  border-radius: var(--radius);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-border-soft);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.wizard__progress li.current {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 500;
 }
 
 .wizard__progress li.current .wizard__progress-circle {
-  border-color: var(--color-accent);
-  background: var(--color-accent-bg);
+  background: var(--color-surface);
   color: var(--color-accent);
+}
+
+.wizard__progress li.done {
+  border-color: var(--color-accent-bg);
+  background: var(--color-accent-bg);
+  color: var(--color-heading);
 }
 
 .wizard__progress li.done .wizard__progress-circle {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
-.wizard__progress li.current .wizard__progress-label {
-  color: var(--color-text);
-  font-weight: 700;
+/* --- Cuerpo del paso: se desplaza si no cabe; el pie queda siempre a la vista --- */
+.wizard__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
 }
 
-.wizard__step h3 {
-  margin-top: 0;
-  font-size: 0.95rem;
+.wizard__step-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
-.wizard__big-options {
+.wizard__step-head p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* --- Caja verde de la condición --- */
+.wizard__condition {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--color-accent-bg);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 14%, transparent);
+  border-radius: var(--radius-panel);
+}
+
+.wizard__condition-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.wizard__badge {
+  min-width: 28px;
+  height: 28px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1px;
-  margin: 0.75rem 0;
-  background: var(--color-border);
-  border: 1px solid var(--color-border);
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.wizard__big-options button {
-  min-height: 64px;
-  padding: 0.9rem;
-  border-radius: 0;
-  border: none;
+/* Menú desplegable con forma de chip (sensor / condición). */
+.wizard__chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
   background: var(--color-surface);
-  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-heading);
   cursor: pointer;
-  font-size: 0.95rem;
+}
+
+.wizard__chip:hover,
+.wizard__chip:focus-within {
+  border-color: var(--color-accent);
+}
+
+.wizard__chip select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 100%;
+  padding: 0 18px 0 0;
+  margin-right: -14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 14px;
+  color: var(--color-heading);
+  cursor: pointer;
+}
+
+.wizard__chip select:focus-visible {
+  outline: none;
+}
+
+.wizard__chip-chevron {
+  flex: none;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.wizard__type {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Interruptor de dos opciones: la elegida, en blanco con borde. */
+.wizard__segmented {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.wizard__segmented button {
+  height: 30px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.wizard__segmented button:hover {
+  color: var(--color-heading);
+}
+
+.wizard__segmented button.selected {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-heading);
+  font-weight: 500;
+}
+
+.wizard__value-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  text-align: center;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.wizard__big-options button:hover {
-  background: var(--color-card);
-}
-
-.wizard__big-options button.selected {
-  background: var(--color-accent-bg);
-  color: var(--color-accent);
-  font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--color-accent);
+  gap: 16px;
 }
 
 .wizard__value {
+  flex: none;
+  min-width: 52px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 14px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--color-accent-dark);
 }
 
-.wizard__nav {
+.wizard__number {
+  width: 120px;
+  height: 34px;
+  padding: 0 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wizard__number:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.wizard__unit {
+  font-size: 14px;
+  color: var(--color-heading);
+}
+
+/* Slider del asistente: pista fina y botón redondo (el de "Mis reglas" es cuadrado). */
+.wizard .wizard__slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0%,
+    var(--color-accent) var(--fill, 0%),
+    var(--color-scrollbar) var(--fill, 0%),
+    var(--color-scrollbar) 100%
+  );
+}
+
+.wizard .wizard__slider::-webkit-slider-thumb {
+  margin-top: -7px;
+  border-radius: 50%;
+}
+
+.wizard .wizard__slider::-moz-range-track {
+  height: 4px;
+  background: var(--color-scrollbar);
+}
+
+.wizard .wizard__slider::-moz-range-progress {
+  height: 4px;
+}
+
+.wizard .wizard__slider::-moz-range-thumb {
+  border-radius: 50%;
+}
+
+/* --- Segunda condición: la otra queda plegada en una línea --- */
+.wizard__collapsed {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--color-accent-bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--color-heading);
+  text-align: left;
 }
 
-.wizard__nav button {
+.wizard__collapsed svg {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.wizard__collapsed:hover {
+  border-color: var(--color-accent);
+}
+
+.wizard__join {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wizard__join .wizard__segmented {
+  padding: 3px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.wizard__link {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 6px;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-accent);
 }
 
-.wizard__back-arrow {
-  transform: rotate(180deg);
+.wizard__link:hover {
+  text-decoration: underline;
+}
+
+.wizard__link--muted {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/* --- Paso 2: tarjetas con círculo de selección --- */
+.wizard__choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wizard__choices--equipment {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wizard__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  text-align: left;
+}
+
+.wizard__choice:hover {
+  border-color: var(--color-accent);
+}
+
+.wizard__choice.selected {
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent);
+}
+
+.wizard__radio {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--color-scrollbar);
+  border-radius: 50%;
+  color: var(--color-on-accent);
+}
+
+.wizard__choice.selected .wizard__radio {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.wizard__choice-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wizard__choice-text strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-heading);
+}
+
+.wizard__choice-text span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+}
+
+.wizard__sublabel {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-heading);
+}
+
+/* --- Paso "¿Por cuánto?" --- */
+.wizard__duration label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-heading);
+}
+
+/* --- Confirmar: la regla en palabras, dentro de la caja verde --- */
+.wizard__summary {
+  margin: 0;
+  padding: 18px 20px;
+  background: var(--color-accent-bg);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 14%, transparent);
+  border-radius: var(--radius-panel);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-heading);
+}
+
+.wizard__summary-key {
+  font-weight: 700;
+}
+
+/* --- Pie: Cancelar a la izquierda; Atrás y Siguiente / Guardar a la derecha --- */
+.wizard__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.wizard__footer .wizard__link {
+  align-self: center;
+}
+
+.wizard__footer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.wizard__back {
+  height: 38px;
+  padding: 0 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-heading);
+}
+
+.wizard__back:hover {
+  border-color: var(--color-accent);
 }
 
 .wizard__next {
+  height: 38px;
+  padding: 0 18px;
   background: var(--color-accent);
   color: var(--color-on-accent);
   border: none;
   border-radius: var(--radius);
-  padding: 0.55rem 1.1rem;
-  cursor: pointer;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.wizard__next:hover {
+.wizard__next:hover:not(:disabled) {
   background: var(--color-accent-dark);
 }
 
-/* El resumen se presenta como un bloque de código: canaleta a la izquierda,
-   palabras clave del lenguaje en lima mayúsculas. */
-.wizard__summary {
-  font-family: var(--font-text);
-  font-size: 1rem;
-  line-height: 1.7;
-  background: var(--color-card);
-  color: var(--color-text);
-  border-radius: var(--radius);
-  border-left: 2px solid var(--color-accent);
-  padding: 1rem 1.15rem;
-}
-
-.wizard__summary-key {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-accent);
-  font-weight: 700;
-}
-
-.wizard__cancel {
-  align-self: flex-end;
-  background: transparent;
-  border: none;
-  color: var(--color-error);
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-/* --- Selector "¿con qué lo comparo?" y condición extra (Y/O) --- */
-.wizard__condition {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.wizard__sublabel {
-  margin: 0.5rem 0 0;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-.wizard__big-options--compact button {
-  min-height: 48px;
-  padding: 0.6rem;
-  font-size: 0.88rem;
-}
-
-.wizard__second-condition {
-  border-top: 1px dashed var(--color-border);
-  padding-top: 0.9rem;
-  margin-top: 0.4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.wizard__add-condition {
-  align-self: flex-start;
-  background: transparent;
-  border: 1px dashed var(--color-border);
-  color: var(--color-accent);
-  border-radius: var(--radius);
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.wizard__add-condition:hover {
-  border-color: var(--color-accent);
+.wizard__next:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

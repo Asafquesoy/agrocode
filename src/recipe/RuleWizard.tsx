@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { LogicalOperator, RelationalOperator } from "../compiler/catalog";
 import type { DeviceRegistry } from "../compiler/device";
 import type { Comparison, Expr, Program, Rule } from "../compiler/ast";
@@ -12,17 +13,7 @@ import {
   logical,
 } from "../compiler/ast";
 import { blockingErrors, checkProgram } from "../compiler/typeChecker";
-import {
-  ACTUATOR_KIND_ICONS,
-  AlarmIcon,
-  CheckIcon,
-  ArrowIcon,
-  DropIcon,
-  PlusIcon,
-  TimerIcon,
-  ValveIcon,
-  VerifiedIcon,
-} from "../components/Icons";
+import { CheckIcon, ChevronIcon, CropIcon, EditIcon, PlusIcon, SENSOR_KIND_ICONS } from "../components/Icons";
 import "./RuleWizard.css";
 
 type Step = "WHEN" | "WHAT" | "DURATION" | "SUMMARY";
@@ -156,14 +147,20 @@ function describeCondition(c: ConditionState, registry: DeviceRegistry): string 
   return `${name} ${operatorText(c.operator)} ${value}${sensor?.unit ?? ""}`;
 }
 
+// Los operadores que ofrece el asistente, en el orden del menú.
+const OPERATORS: RelationalOperator[] = ["<", ">", "="];
+
 // Selector de condición: medición, operador y un número (entero o con
-// decimales). Se usa dos veces: para la condición principal y para la
-// condición opcional que se agrega con "Y además" / "O también".
+// decimales), dentro de la caja verde que abre con "SI" (o con "Y"/"O" en la
+// segunda condición). Se usa dos veces: para la condición principal y para la
+// condición opcional que se agrega con "Y también" / "O también".
 function ConditionSelector({
+  badge,
   condition,
   registry,
   onChange,
 }: {
+  badge: string;
   condition: ConditionState;
   registry: DeviceRegistry;
   onChange: (c: ConditionState) => void;
@@ -172,76 +169,155 @@ function ConditionSelector({
   const min = selectedSensor.min;
   const max = selectedSensor.max;
   const fill = max > min ? ((clamp(condition.integerValue, min, max) - min) / (max - min)) * 100 : 0;
+  const SensorIcon = SENSOR_KIND_ICONS[selectedSensor.kind] ?? CropIcon;
 
   return (
     <div className="wizard__condition">
-      <div className="wizard__big-options">
-        {registry.sensors.map((s) => (
-          <button
-            key={s.id}
-            className={s.id === condition.sensor ? "selected" : ""}
-            onClick={() =>
+      <div className="wizard__condition-row">
+        <span className="wizard__badge">{badge}</span>
+        <label className="wizard__chip">
+          <SensorIcon size={15} />
+          <select
+            aria-label="Sensor"
+            value={condition.sensor}
+            onChange={(e) => {
+              const s = registry.sensors.find((x) => x.id === e.target.value);
+              if (!s) return;
               onChange({
                 ...condition,
                 sensor: s.id,
                 // El slider de otro sensor tiene otro rango: no se deja el valor fuera de él.
                 integerValue: clamp(condition.integerValue, s.min, s.max),
-              })
-            }
+              });
+            }}
           >
-            {s.label}
-          </button>
-        ))}
+            {registry.sensors.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <ChevronIcon size={14} className="wizard__chip-chevron" />
+        </label>
+        <label className="wizard__chip">
+          <select
+            aria-label="Condición"
+            value={condition.operator}
+            onChange={(e) => onChange({ ...condition, operator: e.target.value as RelationalOperator })}
+          >
+            {OPERATORS.map((op) => (
+              <option key={op} value={op}>
+                {operatorText(op)}
+              </option>
+            ))}
+          </select>
+          <ChevronIcon size={14} className="wizard__chip-chevron" />
+        </label>
       </div>
-      <label>
-        Cuando {selectedSensor.label.toLowerCase()}{" "}
-        <select value={condition.operator} onChange={(e) => onChange({ ...condition, operator: e.target.value as RelationalOperator })}>
-          <option value="<">baje de</option>
-          <option value=">">suba de</option>
-          <option value="=">sea igual a</option>
-        </select>
-      </label>
 
-      <p className="wizard__sublabel">¿Con qué lo comparo?</p>
-      <div className="wizard__big-options wizard__big-options--compact">
-        <button className={condition.mode === "INTEGER" ? "selected" : ""} onClick={() => onChange({ ...condition, mode: "INTEGER" })}>
-          Un número
-        </button>
-        <button className={condition.mode === "DECIMAL" ? "selected" : ""} onClick={() => onChange({ ...condition, mode: "DECIMAL" })}>
-          Un número con decimales
-        </button>
+      <div className="wizard__type">
+        <span>Tipo de valor</span>
+        <div className="wizard__segmented" role="group" aria-label="Tipo de valor">
+          <button
+            className={condition.mode === "INTEGER" ? "selected" : ""}
+            aria-pressed={condition.mode === "INTEGER"}
+            onClick={() => onChange({ ...condition, mode: "INTEGER" })}
+          >
+            Un número
+          </button>
+          <button
+            className={condition.mode === "DECIMAL" ? "selected" : ""}
+            aria-pressed={condition.mode === "DECIMAL"}
+            onClick={() => onChange({ ...condition, mode: "DECIMAL" })}
+          >
+            Un número con decimales
+          </button>
+        </div>
       </div>
 
       {condition.mode === "INTEGER" && (
-        <>
+        <div className="wizard__value-row">
           <input
             type="range"
             min={min}
             max={max}
             value={clamp(condition.integerValue, min, max)}
             className="wizard__slider"
+            aria-label="Valor"
             style={{ "--fill": `${fill}%` } as React.CSSProperties}
             onChange={(e) => onChange({ ...condition, integerValue: Number(e.target.value) })}
           />
-          <p className="wizard__value">
+          <span className="wizard__value">
             {condition.integerValue}
             {selectedSensor.unit}
-          </p>
-        </>
+          </span>
+        </div>
       )}
 
       {condition.mode === "DECIMAL" && (
-        <p className="wizard__value">
+        <div className="wizard__value-row">
           <input
             type="number"
             step="0.1"
+            className="wizard__number"
+            aria-label="Valor"
             value={condition.decimalValue}
             onChange={(e) => onChange({ ...condition, decimalValue: Number(e.target.value) })}
-          />{" "}
-          {selectedSensor.unit}
-        </p>
+          />
+          {selectedSensor.unit && <span className="wizard__unit">{selectedSensor.unit}</span>}
+        </div>
       )}
     </div>
+  );
+}
+
+// Condición plegada: una línea con lo que dice ("Sensor de lluvia sube de 30");
+// al hacer clic se despliega para editarla.
+function ConditionSummary({
+  condition,
+  registry,
+  onEdit,
+}: {
+  condition: ConditionState;
+  registry: DeviceRegistry;
+  onEdit: () => void;
+}) {
+  const sensor = registry.sensors.find((s) => s.id === condition.sensor);
+  const value = condition.mode === "INTEGER" ? condition.integerValue : condition.decimalValue;
+  return (
+    <button className="wizard__collapsed" onClick={onEdit} title="Editar esta condición">
+      <span>
+        {sensor?.label ?? condition.sensor} {operatorText(condition.operator)}{" "}
+        <strong>
+          {value}
+          {sensor?.unit ?? ""}
+        </strong>
+      </span>
+      <EditIcon size={14} />
+    </button>
+  );
+}
+
+// Tarjeta de opción con su círculo de selección (acciones y equipos del paso 2).
+function ChoiceCard({
+  selected,
+  title,
+  text,
+  onClick,
+}: {
+  selected: boolean;
+  title: string;
+  text: string;
+  onClick: () => void;
+}) {
+  return (
+    <button className={`wizard__choice${selected ? " selected" : ""}`} aria-pressed={selected} onClick={onClick}>
+      <span className="wizard__radio">{selected && <CheckIcon size={12} />}</span>
+      <span className="wizard__choice-text">
+        <strong>{title}</strong>
+        <span>{text}</span>
+      </span>
+    </button>
   );
 }
 
@@ -260,6 +336,22 @@ export function RuleWizard({
   const [state, setState] = useState<WizardState>(
     () => (initialRule && wizardStateFromRule(initialRule, registry)) || initialState(registry)
   );
+  // Con dos condiciones, solo una se ve desplegada; la otra queda en una línea.
+  const [expanded, setExpanded] = useState<1 | 2>(1);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Es una ventana sobre "Mi dispositivo": toma el foco al abrirse y Esc la cierra (igual que "Cancelar").
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
 
   // El paso DURATION solo existe cuando la acción elegida es "esperar"; el
   // indicador de progreso debe contar 3 o 4 pasos según corresponda.
@@ -303,170 +395,214 @@ export function RuleWizard({
 
   const actuatorLabel = (id: string) => registry.actuators.find((a) => a.id === id)?.label ?? id;
 
-  return (
-    <div className="wizard">
-      <ol className="wizard__progress">
-        {visibleSteps.map((s, i) => (
-          <li key={s.id} className={i === currentIndex ? "current" : i < currentIndex ? "done" : "pending"}>
-            <span className="wizard__progress-circle">{i < currentIndex ? <CheckIcon size={12} /> : i + 1}</span>
-            <span className="wizard__progress-label">
-              Paso {i + 1} de {visibleSteps.length} · {s.label}
-            </span>
-          </li>
-        ))}
-      </ol>
+  // A dónde llevan "Atrás" y "Siguiente" en cada paso (DURATION solo existe al elegir "esperar").
+  const back: Step | null =
+    step === "WHAT" ? "WHEN" : step === "DURATION" ? "WHAT" : step === "SUMMARY" ? (state.actionType === "WAIT" ? "DURATION" : "WHAT") : null;
+  const next: Step | null =
+    step === "WHEN" ? "WHAT" : step === "WHAT" ? (state.actionType === "WAIT" ? "DURATION" : "SUMMARY") : step === "DURATION" ? "SUMMARY" : null;
 
-      {step === "WHEN" && (
-        <div className="wizard__step">
-          <h3>¿Cuándo quieres que actúe el sistema?</h3>
-          <ConditionSelector
-            condition={state.condition}
-            registry={registry}
-            onChange={(condition) => setState((s) => ({ ...s, condition }))}
-          />
+  const stepTitle =
+    step === "SUMMARY"
+      ? "Así quedaría tu regla"
+      : `Paso ${currentIndex + 1} de ${visibleSteps.length} · ${visibleSteps[currentIndex]?.label ?? ""}`;
 
-          {state.useSecondCondition ? (
-            <div className="wizard__second-condition">
-              <div className="wizard__nav">
-                <p className="wizard__sublabel">
-                  <select
-                    value={state.logicalOperator}
-                    onChange={(e) => setState((s) => ({ ...s, logicalOperator: e.target.value as LogicalOperator }))}
-                  >
-                    <option value="Y">Y además…</option>
-                    <option value="O">O también…</option>
-                  </select>
-                </p>
-                <button onClick={() => setState((s) => ({ ...s, useSecondCondition: false }))}>Quitar esta condición</button>
-              </div>
-              <ConditionSelector
-                condition={state.condition2}
-                registry={registry}
-                onChange={(condition2) => setState((s) => ({ ...s, condition2 }))}
-              />
-            </div>
-          ) : (
-            <button className="wizard__add-condition" onClick={() => setState((s) => ({ ...s, useSecondCondition: true }))}>
-              <PlusIcon size={14} /> Agregar otra condición (Y / O)
-            </button>
-          )}
-
-          <button className="wizard__next" onClick={() => setStep("WHAT")}>
-            Siguiente <ArrowIcon size={16} />
-          </button>
+  return createPortal(
+    <div className="wizard-overlay">
+      <div className="wizard" role="dialog" aria-modal="true" aria-labelledby="wizard-title" ref={dialogRef} tabIndex={-1}>
+        <div className="wizard__head">
+          <h2 id="wizard-title">{initialRule ? "Editar regla" : "Nueva regla"}</h2>
+          <ol className="wizard__progress">
+            {visibleSteps.map((s, i) => (
+              <li
+                key={s.id}
+                className={i === currentIndex ? "current" : i < currentIndex ? "done" : "pending"}
+                aria-current={i === currentIndex ? "step" : undefined}
+              >
+                <span className="wizard__progress-circle">{i + 1}</span>
+                <span className="wizard__progress-label">{s.label}</span>
+              </li>
+            ))}
+          </ol>
         </div>
-      )}
 
-      {step === "WHAT" && (
-        <div className="wizard__step">
-          <h3>¿Qué debe hacer el sistema?</h3>
-          <div className="wizard__big-options">
-            <button
-              className={state.actionType === "STATE" && state.stateActionType === "ENCENDER" ? "selected" : ""}
-              onClick={() => setState((s) => ({ ...s, actionType: "STATE", stateActionType: "ENCENDER" }))}
-            >
-              <DropIcon size={22} /> Encender un equipo
-            </button>
-            <button
-              className={state.actionType === "STATE" && state.stateActionType === "APAGAR" ? "selected" : ""}
-              onClick={() => setState((s) => ({ ...s, actionType: "STATE", stateActionType: "APAGAR" }))}
-            >
-              <ValveIcon size={22} /> Apagar un equipo
-            </button>
-            <button
-              className={state.actionType === "WAIT" ? "selected" : ""}
-              onClick={() => setState((s) => ({ ...s, actionType: "WAIT" }))}
-            >
-              <TimerIcon size={22} /> Solo esperar
-            </button>
+        <div className="wizard__body">
+          <div className="wizard__step-head">
+            <h3>{stepTitle}</h3>
+            {step === "WHEN" && <p>Elige qué debe medir el sensor para que la regla se active.</p>}
+            {step === "DURATION" && <p>¿Cuánto tiempo debe esperar el sistema?</p>}
           </div>
 
-          {state.actionType === "STATE" && (
-            <>
-              <p className="wizard__sublabel">Equipos</p>
-              <div className="wizard__big-options">
-                {registry.actuators.map((a) => {
-                  const ActuatorIcon = ACTUATOR_KIND_ICONS[a.kind] ?? AlarmIcon;
-                  return (
-                    <button
-                      key={a.id}
-                      className={a.id === state.targetActuator ? "selected" : ""}
-                      onClick={() => setState((s) => ({ ...s, targetActuator: a.id }))}
-                    >
-                      <ActuatorIcon size={20} /> {a.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          <div className="wizard__nav">
-            <button onClick={() => setStep("WHEN")}>
-              <ArrowIcon size={16} className="wizard__back-arrow" /> Atrás
-            </button>
-            <button className="wizard__next" onClick={() => setStep(state.actionType === "WAIT" ? "DURATION" : "SUMMARY")}>
-              Siguiente <ArrowIcon size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === "DURATION" && (
-        <div className="wizard__step">
-          <h3>¿Cuánto tiempo esperar?</h3>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={state.seconds}
-            onChange={(e) => setState((s) => ({ ...s, seconds: Math.max(1, Math.round(Number(e.target.value))) }))}
-          />
-          <span> segundos</span>
-          <div className="wizard__nav">
-            <button onClick={() => setStep("WHAT")}>
-              <ArrowIcon size={16} className="wizard__back-arrow" /> Atrás
-            </button>
-            <button className="wizard__next" onClick={() => setStep("SUMMARY")}>
-              Siguiente <ArrowIcon size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === "SUMMARY" && (
-        <div className="wizard__step">
-          <h3>Así quedaría tu regla:</h3>
-          <p className="wizard__summary">
-            <span className="wizard__summary-key">SI</span> {candidateRule.name},{" "}
-            <span className="wizard__summary-key">ENTONCES</span>{" "}
-            {state.actionType === "STATE" ? (
+          {step === "WHEN" &&
+            (state.useSecondCondition ? (
               <>
-                {state.stateActionType === "ENCENDER" ? "enciende" : "apaga"}{" "}
-                <strong>{actuatorLabel(state.targetActuator)}</strong>
+                {expanded === 1 ? (
+                  <ConditionSelector
+                    badge="SI"
+                    condition={state.condition}
+                    registry={registry}
+                    onChange={(condition) => setState((s) => ({ ...s, condition }))}
+                  />
+                ) : (
+                  <ConditionSummary condition={state.condition} registry={registry} onEdit={() => setExpanded(1)} />
+                )}
+
+                <div className="wizard__join">
+                  <div className="wizard__segmented" role="group" aria-label="Cómo se une la segunda condición">
+                    <button
+                      className={state.logicalOperator === "Y" ? "selected" : ""}
+                      aria-pressed={state.logicalOperator === "Y"}
+                      onClick={() => setState((s) => ({ ...s, logicalOperator: "Y" }))}
+                    >
+                      Y también…
+                    </button>
+                    <button
+                      className={state.logicalOperator === "O" ? "selected" : ""}
+                      aria-pressed={state.logicalOperator === "O"}
+                      onClick={() => setState((s) => ({ ...s, logicalOperator: "O" }))}
+                    >
+                      O también…
+                    </button>
+                  </div>
+                  <button
+                    className="wizard__link wizard__link--muted"
+                    onClick={() => {
+                      setState((s) => ({ ...s, useSecondCondition: false }));
+                      setExpanded(1);
+                    }}
+                  >
+                    Quitar esta condición
+                  </button>
+                </div>
+
+                {expanded === 2 ? (
+                  <ConditionSelector
+                    badge={state.logicalOperator}
+                    condition={state.condition2}
+                    registry={registry}
+                    onChange={(condition2) => setState((s) => ({ ...s, condition2 }))}
+                  />
+                ) : (
+                  <ConditionSummary condition={state.condition2} registry={registry} onEdit={() => setExpanded(2)} />
+                )}
               </>
             ) : (
               <>
-                espera <strong>{state.seconds} segundos</strong>
+                <ConditionSelector
+                  badge="SI"
+                  condition={state.condition}
+                  registry={registry}
+                  onChange={(condition) => setState((s) => ({ ...s, condition }))}
+                />
+                <button
+                  className="wizard__link"
+                  onClick={() => {
+                    setState((s) => ({ ...s, useSecondCondition: true }));
+                    setExpanded(2);
+                  }}
+                >
+                  <PlusIcon size={14} /> Agregar otra condición (Y/O)
+                </button>
               </>
-            )}
-            .
-          </p>
+            ))}
 
-          <div className="wizard__nav">
-            <button onClick={() => setStep(state.actionType === "WAIT" ? "DURATION" : "WHAT")}>
-              <ArrowIcon size={16} className="wizard__back-arrow" /> Atrás
-            </button>
-            <button className="wizard__next" onClick={finish} disabled={!isRuleValid}>
-              Guardar regla <VerifiedIcon size={16} />
-            </button>
+          {step === "WHAT" && (
+            <>
+              <div className="wizard__choices">
+                <ChoiceCard
+                  selected={state.actionType === "STATE" && state.stateActionType === "ENCENDER"}
+                  title="Encender un equipo"
+                  text="Activa el equipo elegido."
+                  onClick={() => setState((s) => ({ ...s, actionType: "STATE", stateActionType: "ENCENDER" }))}
+                />
+                <ChoiceCard
+                  selected={state.actionType === "STATE" && state.stateActionType === "APAGAR"}
+                  title="Apagar un equipo"
+                  text="Desactiva el equipo elegido."
+                  onClick={() => setState((s) => ({ ...s, actionType: "STATE", stateActionType: "APAGAR" }))}
+                />
+                <ChoiceCard
+                  selected={state.actionType === "WAIT"}
+                  title="Solo esperar"
+                  text="No enciende ni apaga nada."
+                  onClick={() => setState((s) => ({ ...s, actionType: "WAIT" }))}
+                />
+              </div>
+
+              {state.actionType === "STATE" && (
+                <>
+                  <p className="wizard__sublabel">Equipos</p>
+                  <div className="wizard__choices wizard__choices--equipment">
+                    {registry.actuators.map((a) => (
+                      <ChoiceCard
+                        key={a.id}
+                        selected={a.id === state.targetActuator}
+                        title={a.label}
+                        text={a.id === state.targetActuator ? "Equipo seleccionado" : "Haz clic para elegirlo"}
+                        onClick={() => setState((s) => ({ ...s, targetActuator: a.id }))}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {step === "DURATION" && (
+            <div className="wizard__condition wizard__duration">
+              <label>
+                Esperar
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  className="wizard__number"
+                  value={state.seconds}
+                  onChange={(e) => setState((s) => ({ ...s, seconds: Math.max(1, Math.round(Number(e.target.value))) }))}
+                />
+                segundos
+              </label>
+            </div>
+          )}
+
+          {step === "SUMMARY" && (
+            <p className="wizard__summary">
+              <span className="wizard__summary-key">SI</span> {candidateRule.name},{" "}
+              <span className="wizard__summary-key">ENTONCES</span>{" "}
+              {state.actionType === "STATE" ? (
+                <>
+                  {state.stateActionType === "ENCENDER" ? "enciende" : "apaga"} {actuatorLabel(state.targetActuator)}
+                </>
+              ) : (
+                <>espera {state.seconds} segundos</>
+              )}
+              .
+            </p>
+          )}
+        </div>
+
+        <div className="wizard__footer">
+          <button className="wizard__link wizard__link--muted" onClick={onCancel}>
+            Cancelar
+          </button>
+          <div className="wizard__footer-actions">
+            {back && (
+              <button className="wizard__back" onClick={() => setStep(back)}>
+                Atrás
+              </button>
+            )}
+            {next ? (
+              <button className="wizard__next" onClick={() => setStep(next)}>
+                Siguiente
+              </button>
+            ) : (
+              <button className="wizard__next" onClick={finish} disabled={!isRuleValid}>
+                Guardar regla
+              </button>
+            )}
           </div>
         </div>
-      )}
-
-      <button className="wizard__cancel" onClick={onCancel}>
-        Cancelar
-      </button>
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 }

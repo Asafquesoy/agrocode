@@ -15,6 +15,7 @@ import {
   Pencil,
   ArrowLeft,
   ArrowRight,
+  ChevronDown,
   CircleCheck,
   TriangleAlert,
   Plus,
@@ -57,6 +58,7 @@ export const RemoveIcon = withThinStroke(Trash);
 export const EditIcon = withThinStroke(Pencil);
 export const ArrowIcon = withThinStroke(ArrowRight);
 export const BackIcon = withThinStroke(ArrowLeft);
+export const ChevronIcon = withThinStroke(ChevronDown);
 export const VerifiedIcon = withThinStroke(CircleCheck);
 export const WarningIcon = withThinStroke(TriangleAlert);
 export const PlusIcon = withThinStroke(Plus);
