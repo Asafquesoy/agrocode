@@ -123,18 +123,16 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
       <section className="recipe-editor__card" aria-labelledby="recipe-editor-rules">
         <div className="recipe-editor__card-head">
           <h2 id="recipe-editor-rules">Mis reglas</h2>
-          {!wizard && (
-            <button className="recipe-editor__add" onClick={() => setWizard({})} disabled={!canBuildRules}>
-              <PlusIcon size={16} />
-              Nueva regla
-            </button>
-          )}
+          <button className="recipe-editor__add" onClick={() => setWizard({})} disabled={!canBuildRules}>
+            <PlusIcon size={16} />
+            Nueva regla
+          </button>
         </div>
 
-        {!wizard && device.rules.length === 0 && (
+        {device.rules.length === 0 && (
           <p className="recipe-editor__hint">Aún no hay reglas. Crea una con «Nueva regla» o prueba la pestaña «Escribir».</p>
         )}
-        {!wizard && !canBuildRules && (
+        {!canBuildRules && (
           <p className="recipe-editor__hint">Registra al menos un sensor y un equipo para armar reglas.</p>
         )}
 
@@ -189,7 +187,7 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
           </div>
         )}
 
-        {suggestions.length > 0 && !wizard && (
+        {suggestions.length > 0 && (
           <>
             <p className="recipe-editor__subhead">Sugerencias para tu dispositivo</p>
             <div className="recipe-editor__suggestions">
