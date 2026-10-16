@@ -411,6 +411,7 @@ pub async fn detectar_placas(app: AppHandle) -> Result<Vec<Placa>, String> {
 pub async fn subir(
     app: AppHandle,
     ocupado: State<'_, Ocupado>,
+    monitor: State<'_, crate::monitor::Monitor>,
     codigo: String,
     puerto: String,
     fqbn: String,
@@ -427,6 +428,8 @@ pub async fn subir(
         return Err("Las herramientas de compilación no están instaladas.".into());
     }
 
+    // El puerto serie es de un solo dueño: se suelta el monitor antes de subir.
+    monitor.detener();
     asegurar_librerias(&app, &raiz, &codigo).await?;
     etapa(&app, "subiendo");
     let carpeta_txt = escribir_sketch(&raiz, codigo).await?;

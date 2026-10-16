@@ -27,6 +27,8 @@ serde_json = "1"
 tokio = { version = "1", features = ["process", "io-util", "fs", "sync", "rt"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 futures-util = "0.3"
+# Monitor serie del ESP32 (sin libudev en Linux: solo hace falta abrir el puerto).
+serialport = { version = "4", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 zip = { version = "2", default-features = false, features = ["deflate"] }

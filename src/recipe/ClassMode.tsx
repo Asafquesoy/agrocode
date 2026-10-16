@@ -11,6 +11,8 @@ import { TYPE_MATRIX, checkProgram } from "../compiler/typeChecker";
 import { CodeBlock, QuadrupleTable } from "../components/OutputPanel";
 import { CppLine, LanguageLine } from "../components/CodeHighlight";
 import { CompilePanel } from "../components/CompilePanel";
+import { LiveBoard } from "../components/LiveBoard";
+import type { Placa } from "../components/compileEngine";
 import { ArrowIcon, BackIcon, CheckIcon, WarningIcon } from "../components/Icons";
 import "./ClassMode.css";
 
@@ -205,6 +207,9 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
   const [step, setStep] = useState(0);
   const [ruleIndex, setRuleIndex] = useState(0);
   const [broken, setBroken] = useState(false);
+  // Placa conectada y si el puerto está ocupado compilando/subiendo (etapa 7).
+  const [board, setBoard] = useState<Placa | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const stage = STAGES[step];
   const registry = useMemo(() => deviceRegistry(device), [device]);
@@ -467,7 +472,8 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
           {stage.id === "board" && (
             <div className="cm__card cm__card--wide cm__board">
               <p className="cm__label">Programa completo del dispositivo ({device.rules.length} reglas)</p>
-              <CompilePanel code={fullCpp} />
+              <CompilePanel code={fullCpp} onBoardChange={setBoard} onBusyChange={setBusy} />
+              <LiveBoard device={device} board={board} paused={busy} />
             </div>
           )}
         </section>

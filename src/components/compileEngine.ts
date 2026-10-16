@@ -56,3 +56,24 @@ export async function escucharCompilacion(handlers: {
   // `un()` es asíncrona: su fallo es una promesa rechazada, no una excepción.
   return () => unlisteners.forEach((un) => void Promise.resolve().then(un).catch(() => {}));
 }
+
+// --- Monitor serie (placa conectada) ---
+
+export function iniciarMonitor(puerto: string): Promise<void> {
+  return invoke<void>("monitor_iniciar", { puerto });
+}
+
+export function detenerMonitor(): Promise<void> {
+  return invoke<void>("monitor_detener");
+}
+
+export async function escucharMonitor(handlers: {
+  onLinea: (linea: string) => void;
+  onError: (mensaje: string) => void;
+}): Promise<() => void> {
+  const unlisteners = await Promise.all([
+    listen<string>("monitor-linea", (e) => handlers.onLinea(e.payload)),
+    listen<string>("monitor-error", (e) => handlers.onError(e.payload)),
+  ]);
+  return () => unlisteners.forEach((un) => void Promise.resolve().then(un).catch(() => {}));
+}

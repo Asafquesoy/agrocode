@@ -62,7 +62,22 @@ function sizeSummary(result: ResultadoCompilacion): { text: string; detail: stri
   };
 }
 
-export function CompilePanel({ code }: { code: string }) {
+// esptool no puede entrar al modo de descarga si BOOT no está pulsado.
+function isBootProblem(message: string): boolean {
+  return /wrong boot mode|failed to connect|no serial data received|timed out waiting for packet/i.test(message);
+}
+
+export function CompilePanel({
+  code,
+  onBoardChange,
+  onBusyChange,
+}: {
+  code: string;
+  // Avisan al contenedor de la placa detectada y de cuándo el puerto está ocupado
+  // (compilando o subiendo), para que el monitor en vivo se aparte del camino.
+  onBoardChange?: (board: Placa | null) => void;
+  onBusyChange?: (busy: boolean) => void;
+}) {
   const available = compilerAvailable();
   // null = todavía no se sabe; false = falta descargar herramientas.
   const [ready, setReady] = useState<boolean | null>(null);
@@ -105,9 +120,21 @@ export function CompilePanel({ code }: { code: string }) {
     };
   }, [available, ready, working]);
 
+  const board = boards[0] ?? null;
+  useEffect(() => {
+    onBoardChange?.(board);
+  }, [board, onBoardChange]);
+  useEffect(() => {
+    onBusyChange?.(working);
+  }, [working, onBusyChange]);
+
   useEffect(() => {
     logEnd.current?.scrollIntoView({ block: "end" });
   }, [log]);
+
+  // Fase de la subida según lo que imprime esptool: mientras conecta hay que
+  // mantener BOOT; en cuanto empieza a escribir ya se puede soltar.
+  const writing = log.some((l) => l.includes("Writing at"));
 
   // Ya hay un resultado, pero de un programa distinto al de ahora (también
   // cubre cambios hechos mientras compilaba).
@@ -140,7 +167,6 @@ export function CompilePanel({ code }: { code: string }) {
   };
 
   const upload = async () => {
-    const board = boards[0];
     if (!board) return;
     setCompiledCode(code);
     setStatus({ kind: "working" });
@@ -193,7 +219,11 @@ export function CompilePanel({ code }: { code: string }) {
         )}
         {working && (
           <span className="compile-panel__hint" role="status">
-            {stageText(stage, progress)}
+            {stage === "subiendo"
+              ? writing
+                ? "Subiendo… ya puedes soltar BOOT"
+                : "Conectando con la placa… mantén pulsado BOOT"
+              : stageText(stage, progress)}
           </span>
         )}
         {stale && (
@@ -208,15 +238,25 @@ export function CompilePanel({ code }: { code: string }) {
         )}
         {!stale && status.kind === "uploaded" && (
           <span className="compile-panel__ok" role="status">
-            <VerifiedIcon size={16} /> Programa cargado en el ESP32
+            <VerifiedIcon size={16} /> Programa cargado en el ESP32 · suelta BOOT para que arranque
           </span>
         )}
         {!stale && status.kind === "error" && (
           <span className="compile-panel__error" role="status">
-            <WarningIcon size={16} /> No se pudo {stage === "subiendo" ? "subir al ESP32" : "compilar"}.
+            <WarningIcon size={16} />{" "}
+            {stage === "subiendo" && isBootProblem(status.message)
+              ? "No se pudo conectar con la placa. Mantén pulsado BOOT y vuelve a pulsar «Subir al ESP32»."
+              : `No se pudo ${stage === "subiendo" ? "subir al ESP32" : "compilar"}.`}
           </span>
         )}
       </div>
+
+      {available && ready && board && !working && status.kind !== "uploaded" && (
+        <p className="compile-panel__boot">
+          <strong>Para subir:</strong> mantén pulsado el botón <strong>BOOT</strong> de la placa, pulsa «Subir al ESP32» y suéltalo cuando
+          empiece a subir.
+        </p>
+      )}
 
       {working && stage === "descargando" && progress && progress.total > 0 && (
         <progress className="compile-panel__progress" value={progress.hecho} max={progress.total} />

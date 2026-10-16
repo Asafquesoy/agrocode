@@ -101,3 +101,13 @@
   white-space: pre-wrap;
   color: var(--color-text);
 }
+
+.compile-panel__boot {
+  margin: 0;
+  padding: 0.55rem 0.9rem;
+  background: var(--color-accent-bg);
+  border-left: 3px solid var(--color-accent);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
