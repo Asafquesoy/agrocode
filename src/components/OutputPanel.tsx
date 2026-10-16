@@ -72,7 +72,7 @@ function DiagnosticList({ results }: { results: RuleCheckResult[] }) {
   );
 }
 
-function CodeBlock({ lines, highlight }: { lines: string[]; highlight: (text: string) => ReactNode }) {
+export function CodeBlock({ lines, highlight }: { lines: string[]; highlight: (text: string) => ReactNode }) {
   return (
     <pre className="output-panel__code">
       {lines.map((line, i) => (
@@ -129,12 +129,12 @@ function WriteTab({ registry }: { registry: DeviceRegistry }) {
 
 // Cuádruplos agrupados por regla: una fila separadora con el nombre de la
 // regla y debajo sus instrucciones (op, arg1, arg2, resultado).
-function QuadrupleTable({ ir }: { ir: IRProgram }) {
+export function QuadrupleTable({ ir }: { ir: IRProgram }) {
   const firstRuleStart = ir.rules.length > 0 ? ir.rules[0].from : ir.quadruples.length;
   const row = (i: number) => {
     const q = ir.quadruples[i];
     return (
-      <tr key={i}>
+      <tr key={i} style={{ "--n": i } as React.CSSProperties}>
         <td className="output-panel__ir-index">{q.index}</td>
         <td className="output-panel__ir-op">{q.op}</td>
         <td>{cell(q.arg1)}</td>

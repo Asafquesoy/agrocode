@@ -398,3 +398,10 @@
 .recipe-editor__save--error {
   color: var(--color-error);
 }
+
+.recipe-editor__class {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--green-night);
+  font-weight: 800;
+}

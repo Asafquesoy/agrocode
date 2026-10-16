@@ -6,6 +6,7 @@ import { pendingSuggestions } from "./suggestions";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 import { RuleWizard, canEditInWizard } from "./RuleWizard";
 import { DeviceSetup } from "./DeviceSetup";
+import { ClassMode } from "./ClassMode";
 import { OutputPanel } from "../components/OutputPanel";
 import { BackIcon, CropIcon, EditIcon, PlusIcon, RemoveIcon } from "../components/Icons";
 import "./RecipeEditor.css";
@@ -46,6 +47,8 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
   const { status, flush } = useAutosave(stored.id, device);
   // null = asistente cerrado; { rule: undefined } = regla nueva; { rule } = editar.
   const [wizard, setWizard] = useState<{ rule?: Rule } | null>(null);
+  // Recorrido visual del compilador para explicarlo en clase.
+  const [classMode, setClassMode] = useState(false);
 
   const registry = useMemo(() => deviceRegistry(device), [device]);
   const program = useMemo(() => deviceToProgram(device), [device]);
@@ -102,10 +105,23 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
         <span className={`recipe-editor__save recipe-editor__save--${status}`} role="status">
           {SAVE_LABELS[status]}
         </span>
+        {view === "RULES" && device.rules.length > 0 && (
+          <button className="recipe-editor__class" onClick={() => setClassMode(true)}>
+            Cómo funciona
+          </button>
+        )}
         {view === "RULES" && <button onClick={() => setView("SETUP")}>Editar sensores y equipos</button>}
       </div>
     </div>
   );
+
+  if (classMode && device.rules.length > 0) {
+    return (
+      <div className="recipe-editor">
+        <ClassMode device={device} onClose={() => setClassMode(false)} />
+      </div>
+    );
+  }
 
   if (view === "SETUP") {
     return (

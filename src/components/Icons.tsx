@@ -9,6 +9,7 @@ import {
   Gauge,
   Zap,
   Siren,
+  Lightbulb,
   Power,
   Timer,
   Trash,
@@ -48,6 +49,7 @@ export const RainIcon = withThinStroke(CloudRain);
 export const TemperatureIcon = withThinStroke(Thermometer);
 export const AirIcon = withThinStroke(Wind);
 export const PowerIcon = withThinStroke(Power);
+export const LedIcon = withThinStroke(Lightbulb);
 
 // --- Interfaz ---
 export const RemoveIcon = withThinStroke(Trash);
@@ -74,5 +76,6 @@ export const ACTUATOR_KIND_ICONS: Record<string, LucideIcon> = {
   PUMP: PumpIcon,
   VALVE: ValveIcon,
   ALARM: AlarmIcon,
+  LED: LedIcon,
   OTHER: PowerIcon,
 };
