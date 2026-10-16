@@ -93,6 +93,16 @@ const TOKEN_LABELS: Record<TokenType, string> = {
   EOF: "fin",
 };
 
+// Qué significa cada tipo de ficha; la leyenda de la etapa 2 solo muestra los que aparecen en la regla.
+const TOKEN_HELP: Partial<Record<TokenType, string>> = {
+  KEYWORD: "una palabra que el lenguaje ya conoce (SI, ENCENDER…).",
+  IDENTIFIER: "el nombre de un sensor o de un equipo que tú registraste.",
+  NUMBER: "el valor con el que se compara la medición.",
+  RELATIONAL_OPERATOR: "cómo se compara: mayor que, menor que, igual…",
+  SEMICOLON: "cierra cada instrucción, como el punto de una oración.",
+  TIME: "una hora del día.",
+};
+
 const TYPE_RULE_TEXT: Record<string, string> = {
   T1: "Comparar un sensor con un número entero da verdadero o falso.",
   T2: "Comparar un sensor con un número decimal da verdadero o falso.",
@@ -268,7 +278,9 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
   const loopLines = useMemo(() => {
     const lines = ruleCpp.split("\n");
     const start = lines.findIndex((l) => l.startsWith("void loop"));
-    return lines.slice(Math.max(0, start));
+    const loop = lines.slice(Math.max(0, start));
+    while (loop.length > 0 && loop[loop.length - 1].trim() === "") loop.pop();
+    return loop;
   }, [ruleCpp]);
   const fullCpp = useMemo(() => {
     try {
@@ -358,6 +370,16 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
                   </span>
                 ))}
               </div>
+              <ul className="cm__legend">
+                {[...new Set(tokens.map((t) => t.type))].map((type) => (
+                  <li key={type}>
+                    <span className={`cm-token cm-token--${type}`}>
+                      <small>{TOKEN_LABELS[type]}</small>
+                    </span>
+                    <span>{TOKEN_HELP[type]}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
