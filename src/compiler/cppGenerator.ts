@@ -111,12 +111,19 @@ export function irToCpp(ir: IRProgram, registry: DeviceRegistry): string {
 
   const rules = ir.rules.map((b) => ruleToCpp(ir, b)).join("\n\n");
 
+  // Las lecturas I2C llaman a leer_X(); sin una definición el sketch no compila,
+  // así que se emite un esqueleto que devuelve 0 hasta implementar el sensor.
+  const i2cStubs = sensors
+    .filter(({ def }) => def.mode === "I2C")
+    .map(({ def, type }) => `${C_TYPES[type]} leer_${def.id}() {\n  return 0; // TODO: lectura I2C de ${commentSafe(def.label)}\n}`)
+    .join("\n\n");
+
   return `// Generado por Agrocode a partir de las reglas del agricultor.
 // Cultivo: ${commentSafe(registry.cropLabel)}
 // NO editar a mano: los cambios se pierden al recompilar desde la app.
 
 ${pinDefs}
-
+${i2cStubs ? `\n${i2cStubs}\n` : ""}
 void setup() {
   Serial.begin(115200);
 ${actuatorSetup}

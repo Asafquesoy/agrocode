@@ -11,6 +11,7 @@ import { inferSensorTypes } from "../compiler/inferTypes";
 import { CopyIcon, SaveIcon, WarningIcon } from "./Icons";
 import { CppLine, LanguageLine } from "./CodeHighlight";
 import { copySketch, saveSketch } from "./exportSketch";
+import { CompilePanel } from "./CompilePanel";
 import "./OutputPanel.css";
 
 type Tab = "language" | "types" | "ir" | "cpp" | "write";
@@ -326,6 +327,7 @@ export function OutputPanel({ program, registry }: { program: Program | null; re
                   </span>
                 )}
               </div>
+              <CompilePanel code={cppText} />
               <CodeBlock lines={cppText.split("\n")} highlight={(t) => <CppLine text={t} />} />
             </>
           ))}

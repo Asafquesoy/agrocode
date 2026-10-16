@@ -1,0 +1,92 @@
+/* Pestaña C++: compilar con arduino-cli (Fase 2) */
+.compile-panel {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-card);
+}
+
+.compile-panel__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.compile-panel__button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  background: var(--color-accent);
+  color: var(--color-bg, #fff);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.compile-panel__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.compile-panel__hint,
+.compile-panel__ok,
+.compile-panel__error {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  min-width: 0;
+}
+
+/* Mensajes de dos líneas: el icono queda arriba y no se encoge. */
+.compile-panel__ok,
+.compile-panel__error {
+  align-items: flex-start;
+}
+
+.compile-panel__ok svg,
+.compile-panel__error svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.compile-panel__hint {
+  color: var(--color-text-muted);
+}
+
+.compile-panel__ok {
+  color: var(--color-accent);
+}
+
+.compile-panel__error {
+  color: var(--color-error);
+}
+
+.compile-panel__progress {
+  display: block;
+  width: calc(100% - 1.5rem);
+  height: 0.4rem;
+  margin: 0 0.75rem 0.5rem;
+  accent-color: var(--color-accent);
+}
+
+.compile-panel__details {
+  border-top: 1px solid var(--color-border-soft);
+  padding: 0.35rem 0.75rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.compile-panel__details summary {
+  cursor: pointer;
+}
+
+.compile-panel__log {
+  margin: 0.4rem 0 0;
+  max-height: 11rem;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  color: var(--color-text);
+}

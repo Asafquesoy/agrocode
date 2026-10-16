@@ -4,7 +4,7 @@ Fuente de verdad de las fases de desarrollo, pensadas para implementarse por par
 distintas. El alcance objetivo (qué se incluye y qué queda deliberadamente fuera) está en
 `ALCANCE.txt`.
 
-**Fase actual: 5 (completada) → siguiente: Fase 2** (orden acordado: 1 → 4 → 5; la Fase 2 después)
+**Fase actual: 2 (completada) → siguiente: Fase 8** (las fases 3, 6 y 7 requieren ESP32 físico)
 
 Decisiones fijas (no re-litigar):
 - Stack: **Tauri 2 + React 19 + TypeScript**, no Flutter (el PDF fuente sugiere Flutter/Dart, pero se
@@ -22,9 +22,11 @@ Decisiones fijas (no re-litigar):
       quitar dependencia `blockly` y scripts de Playwright muertos, actualizar README/CLAUDE.md.
 - [x] **Fase 1 — Exportar el sketch a disco.** `tauri-plugin-fs` + `tauri-plugin-dialog`, botón
       "Guardar .ino" y "Copiar" en `OutputPanel.tsx`. No requiere ESP32.
-- [ ] **Fase 2 — Motor de compilación (`arduino-cli` en segundo plano).** Sidecar de `arduino-cli`,
-      comandos Rust `verificar_entorno`/`instalar_core`/`compilar`, streaming de progreso por eventos
-      de Tauri, panel de compilación en React. No requiere ESP32 (`arduino-cli compile` sin placa).
+- [x] **Fase 2 — Motor de compilación (`arduino-cli` en segundo plano).** `arduino-cli` se descarga
+      solo la primera vez (no es sidecar: no infla el instalador ni git) a la carpeta de datos de la
+      app (`arduino/`); comandos Rust `verificar_entorno`/`preparar_entorno`/`compilar`
+      (`src-tauri/src/compilador.rs`), streaming por eventos `compilacion-*`, panel
+      `CompilePanel.tsx` en la pestaña C++. No requiere ESP32 (`arduino-cli compile` sin placa).
 - [ ] **Fase 3 — Detección de puerto y flasheo.** Crate `serialport`, comandos `listar_puertos`/`subir`,
       selector de puerto + indicador "ESP32 Conectado (COMx)". **Requiere ESP32 físico.**
 - [x] **Fase 4 — Registro dinámico de cultivo, sensores y actuadores.** Reemplazar los catálogos fijos
