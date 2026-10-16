@@ -4,12 +4,14 @@ Fuente de verdad de las fases de desarrollo, pensadas para implementarse por par
 distintas. El alcance objetivo (qué se incluye y qué queda deliberadamente fuera) está en
 `ALCANCE.txt`.
 
-**Fase actual: 2 (completada) → siguiente: Fase 8** (las fases 3, 6 y 7 requieren ESP32 físico)
+**Fase actual: 2 (completada) → siguiente: Fase 8.** La rama `Cbtis` es una **demo para alumnos de
+preparatoria** (2026-10-15): no completa fases nuevas, hace que el programa funcione de punta a punta con
+el ESP32 real y que el proceso del compilador se vea (ver "Rama Cbtis" al final). Ya hay ESP32 físico.
 
 Decisiones fijas (no re-litigar):
 - Stack: **Tauri 2 + React 19 + TypeScript**, no Flutter (el PDF fuente sugiere Flutter/Dart, pero se
   evaluó y se descartó — ver CLAUDE.md).
-- A fecha 2026-09-09 **no hay ESP32 físico disponible**; las fases que lo requieren están marcadas.
+- A fecha 2026-10-15 **ya hay un ESP32 físico** (ver "Rama Cbtis"); las fases 3, 6 y 7 pueden probarse.
 - Propuestas alternativas de UI (Blockly, Tarjetas) fueron eliminadas — solo queda "Receta".
 - A fecha 2026-09-09 se decidió reemplazar el catálogo fijo de cultivos/sensores/actuadores por
   registro libre del usuario, agregar persistencia de configuraciones de dispositivo y control
@@ -27,7 +29,7 @@ Decisiones fijas (no re-litigar):
       app (`arduino/`); comandos Rust `verificar_entorno`/`preparar_entorno`/`compilar`
       (`src-tauri/src/compilador.rs`), streaming por eventos `compilacion-*`, panel
       `CompilePanel.tsx` en la pestaña C++. No requiere ESP32 (`arduino-cli compile` sin placa).
-- [ ] **Fase 3 — Detección de puerto y flasheo.** Crate `serialport`, comandos `listar_puertos`/`subir`,
+- [~] **Fase 3 — Detección de puerto y flasheo.** *Hecha en la rama `Cbtis`: `detectar_placas` y `subir` (vía `arduino-cli`, sin crate `serialport` para eso), guía del botón BOOT y monitor serie.* Crate `serialport`, comandos `listar_puertos`/`subir`,
       selector de puerto + indicador "ESP32 Conectado (COMx)". **Requiere ESP32 físico.**
 - [x] **Fase 4 — Registro dinámico de cultivo, sensores y actuadores.** Reemplazar los catálogos fijos
       `CROPS`/`SENSORS`/`ACTUATORS` de `catalog.ts` por entidades que el usuario crea, edita y
@@ -68,3 +70,18 @@ Detalle completo de cada fase (archivos concretos a tocar, comandos exactos) en 
 que originó este roadmap: `C:\Users\omara\.claude\plans\la-propuesta-ganadora-es-curried-pebble.md`.
 Ese plan describe el alcance previo (catálogo fijo); las Fases 4, 5 y 7 son adiciones posteriores al
 plan original y aún no tienen detalle de implementación por archivo.
+
+## Rama Cbtis (demo para alumnos de prepa)
+
+Hardware real (verificado 2026-10-15): **ESP32-D0WD-V3**, 4 MB, CP2102 en COM5 (hace falta el driver CP210x
+de Silicon Labs), **no entra solo al modo de descarga: hay que mantener BOOT pulsado al subir**. Cableado:
+AHT20 (temperatura y humedad) y BMP280 por I2C (SDA 21, SCL 22); LED 1 RGB cátodo común en R 4, G 18, B 5;
+LED 2 RGB en R 25, G 27, B 26. Está en `src/compiler/kit.ts` (`kitDevice`) y en `pins.ts`.
+
+- **Kit de la clase** (botón en Mis dispositivos): dispositivo ya armado con 4 reglas.
+- **Modo clase** (`src/recipe/ClassMode.tsx`, botón "Cómo funciona"): 7 etapas del compilador con datos reales.
+- El C++ lee el AHT20 de verdad y emite líneas `AGRO ...` por serie (`agroProtocol.ts` las interpreta);
+  `src-tauri/src/monitor.rs` las lee y `LiveBoard.tsx` las dibuja en vivo. Esto cambia el "fuera de alcance:
+  monitor serial" de `ALCANCE.txt`, solo para esta demo.
+- Copia de seguridad del programa original de la placa: `Agrocodeespaldo-esp32\` (fuera del repo).
+- Sin hacer: Fase 6 (hora real), Fase 7 (Wi-Fi), BMP280 como sensor de presión.
