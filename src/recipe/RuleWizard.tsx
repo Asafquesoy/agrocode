@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import type { LucideIcon } from "lucide-react";
 import type { LogicalOperator, RelationalOperator } from "../compiler/catalog";
 import type { DeviceRegistry } from "../compiler/device";
 import type { Comparison, Expr, Program, Rule } from "../compiler/ast";
@@ -150,6 +151,178 @@ function describeCondition(c: ConditionState, registry: DeviceRegistry): string 
 // Los operadores que ofrece el asistente, en el orden del menú.
 const OPERATORS: RelationalOperator[] = ["<", ">", "="];
 
+interface ChipOption<T extends string> {
+  value: T;
+  label: string;
+  icon?: LucideIcon;
+}
+
+// Menú con forma de chip (sensor / condición). La lista es propia, con la
+// superficie, el borde y el verde de la app, en vez del desplegable del
+// sistema; se monta en document.body para que el scroll del paso no la corte.
+// Esc cierra solo el menú, no la ventana del asistente.
+function ChipSelect<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: ChipOption<T>[];
+  onChange: (value: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const [position, setPosition] = useState<{ top: number; left: number; minWidth: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+  const menuId = useId();
+
+  const currentIndex = Math.max(0, options.findIndex((o) => o.value === value));
+  const current = options[currentIndex];
+  const CurrentIcon = current?.icon;
+
+  function openMenu() {
+    setActive(currentIndex);
+    setPosition(null);
+    setOpen(true);
+  }
+
+  function close(returnFocus: boolean) {
+    setOpen(false);
+    if (returnFocus) buttonRef.current?.focus();
+  }
+
+  function choose(index: number) {
+    const option = options[index];
+    if (option && option.value !== value) onChange(option.value);
+    close(true);
+  }
+
+  // Abre debajo del chip, o encima si abajo no cabe; nunca se sale de la ventana.
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current || !menuRef.current) return;
+    const chip = buttonRef.current.getBoundingClientRect();
+    const menu = menuRef.current.getBoundingClientRect();
+    const gap = 6;
+    const below = chip.bottom + gap;
+    const fitsBelow = below + menu.height <= window.innerHeight - 8;
+    const top = fitsBelow || chip.top - gap - menu.height < 8 ? below : chip.top - gap - menu.height;
+    const left = Math.min(chip.left, window.innerWidth - Math.max(menu.width, chip.width) - 8);
+    setPosition({ top, left: Math.max(8, left), minWidth: chip.width });
+  }, [open]);
+
+  // El foco pasa a la lista ya colocada (oculta no lo acepta) para usarla con el teclado.
+  useLayoutEffect(() => {
+    if (open && position) menuRef.current?.focus();
+  }, [open, position]);
+
+  // Un clic fuera, cambiar el tamaño de la ventana o desplazar el paso lo cierran.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (!menuRef.current?.contains(target) && !buttonRef.current?.contains(target)) close(false);
+    };
+    const onScroll = (e: Event) => {
+      if (!menuRef.current?.contains(e.target as Node)) close(false);
+    };
+    const onResize = () => close(false);
+    document.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (open) document.getElementById(`${menuId}-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [open, active, menuId]);
+
+  function onMenuKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown") setActive((i) => Math.min(options.length - 1, i + 1));
+    else if (e.key === "ArrowUp") setActive((i) => Math.max(0, i - 1));
+    else if (e.key === "Home") setActive(0);
+    else if (e.key === "End") setActive(options.length - 1);
+    else if (e.key === "Enter" || e.key === " ") choose(active);
+    else if (e.key === "Escape" || e.key === "Tab") close(true);
+    else return;
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="wizard__chip"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-label={`${label}: ${current?.label ?? ""}`}
+        onClick={() => (open ? close(false) : openMenu())}
+        onKeyDown={(e) => {
+          if (!open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+            e.preventDefault();
+            openMenu();
+          } else if (open && e.key === "Escape") {
+            e.stopPropagation();
+            close(true);
+          }
+        }}
+      >
+        {CurrentIcon && <CurrentIcon size={15} />}
+        <span className="wizard__chip-text">{current?.label}</span>
+        <ChevronIcon size={14} className="wizard__chip-chevron" />
+      </button>
+      {open &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            id={menuId}
+            className="wizard__menu"
+            role="listbox"
+            aria-label={label}
+            aria-activedescendant={`${menuId}-${active}`}
+            tabIndex={-1}
+            style={
+              position
+                ? { top: position.top, left: position.left, minWidth: position.minWidth }
+                : { visibility: "hidden" }
+            }
+            onKeyDown={onMenuKeyDown}
+          >
+            {options.map((option, i) => {
+              const Icon = option.icon;
+              const selected = i === currentIndex;
+              return (
+                <li
+                  key={option.value}
+                  id={`${menuId}-${i}`}
+                  role="option"
+                  aria-selected={selected}
+                  className={`wizard__menu-option${selected ? " selected" : ""}${i === active ? " active" : ""}`}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => choose(i)}
+                >
+                  {Icon && <Icon size={15} />}
+                  <span className="wizard__menu-label">{option.label}</span>
+                  {selected && <CheckIcon size={14} className="wizard__menu-check" />}
+                </li>
+              );
+            })}
+          </ul>,
+          document.body
+        )}
+    </>
+  );
+}
+
 // Selector de condición: medición, operador y un número (entero o con
 // decimales), dentro de la caja verde que abre con "SI" (o con "Y"/"O" en la
 // segunda condición). Se usa dos veces: para la condición principal y para la
@@ -169,50 +342,36 @@ function ConditionSelector({
   const min = selectedSensor.min;
   const max = selectedSensor.max;
   const fill = max > min ? ((clamp(condition.integerValue, min, max) - min) / (max - min)) * 100 : 0;
-  const SensorIcon = SENSOR_KIND_ICONS[selectedSensor.kind] ?? CropIcon;
 
   return (
     <div className="wizard__condition">
       <div className="wizard__condition-row">
         <span className="wizard__badge">{badge}</span>
-        <label className="wizard__chip">
-          <SensorIcon size={15} />
-          <select
-            aria-label="Sensor"
-            value={condition.sensor}
-            onChange={(e) => {
-              const s = registry.sensors.find((x) => x.id === e.target.value);
-              if (!s) return;
-              onChange({
-                ...condition,
-                sensor: s.id,
-                // El slider de otro sensor tiene otro rango: no se deja el valor fuera de él.
-                integerValue: clamp(condition.integerValue, s.min, s.max),
-              });
-            }}
-          >
-            {registry.sensors.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-          <ChevronIcon size={14} className="wizard__chip-chevron" />
-        </label>
-        <label className="wizard__chip">
-          <select
-            aria-label="Condición"
-            value={condition.operator}
-            onChange={(e) => onChange({ ...condition, operator: e.target.value as RelationalOperator })}
-          >
-            {OPERATORS.map((op) => (
-              <option key={op} value={op}>
-                {operatorText(op)}
-              </option>
-            ))}
-          </select>
-          <ChevronIcon size={14} className="wizard__chip-chevron" />
-        </label>
+        <ChipSelect
+          label="Sensor"
+          value={condition.sensor}
+          options={registry.sensors.map((s) => ({
+            value: s.id,
+            label: s.label,
+            icon: SENSOR_KIND_ICONS[s.kind] ?? CropIcon,
+          }))}
+          onChange={(id) => {
+            const s = registry.sensors.find((x) => x.id === id);
+            if (!s) return;
+            onChange({
+              ...condition,
+              sensor: s.id,
+              // El slider de otro sensor tiene otro rango: no se deja el valor fuera de él.
+              integerValue: clamp(condition.integerValue, s.min, s.max),
+            });
+          }}
+        />
+        <ChipSelect
+          label="Condición"
+          value={condition.operator}
+          options={OPERATORS.map((op) => ({ value: op, label: operatorText(op) }))}
+          onChange={(operator) => onChange({ ...condition, operator })}
+        />
       </div>
 
       <div className="wizard__type">

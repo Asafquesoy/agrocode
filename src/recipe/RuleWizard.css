@@ -149,7 +149,6 @@
 
 /* Menú desplegable con forma de chip (sensor / condición). */
 .wizard__chip {
-  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -158,37 +157,96 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
+  font-size: 14px;
   color: var(--color-heading);
-  cursor: pointer;
 }
 
 .wizard__chip:hover,
-.wizard__chip:focus-within {
+.wizard__chip[aria-expanded="true"] {
   border-color: var(--color-accent);
 }
 
-.wizard__chip select {
-  appearance: none;
-  -webkit-appearance: none;
-  height: 100%;
-  padding: 0 18px 0 0;
-  margin-right: -14px;
-  background: transparent;
-  border: none;
-  border-radius: 0;
+.wizard__chip svg {
+  flex: none;
+}
+
+.wizard__chip-text {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard__chip-chevron {
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.wizard__chip[aria-expanded="true"] .wizard__chip-chevron {
+  transform: rotate(180deg);
+}
+
+/* Lista del chip: la misma superficie, borde y sombra que la ventana, con la
+   opción elegida en verde. Va en document.body, por eso position: fixed. */
+.wizard__menu {
+  position: fixed;
+  z-index: 110;
+  max-width: 320px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 12px 28px rgba(34, 57, 46, 0.14);
+  animation: appear 0.12s ease;
+}
+
+.wizard__menu:focus {
+  outline: none;
+}
+
+.wizard__menu-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
   font-size: 14px;
   color: var(--color-heading);
   cursor: pointer;
 }
 
-.wizard__chip select:focus-visible {
-  outline: none;
-}
-
-.wizard__chip-chevron {
+.wizard__menu-option svg {
   flex: none;
   color: var(--color-text-muted);
-  pointer-events: none;
+}
+
+.wizard__menu-option.active {
+  background: var(--color-accent-bg);
+}
+
+.wizard__menu-option.selected {
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+.wizard__menu-option.selected svg {
+  color: var(--color-accent);
+}
+
+.wizard__menu-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard__menu-check {
+  margin-left: auto;
 }
 
 .wizard__type {

@@ -68,6 +68,7 @@ Además del app, hay un CLI del analizador (`scripts/analyze.ts`, `npm run analy
 - mantener la acción principal a la vista sin scroll (pie `position: sticky`);
 - cortar con "…" en una línea los textos largos del usuario (nombre, cultivo) en vez de romper cabeceras o tarjetas;
 - usar las scrollbars finas del tema (`base.css`), no las blancas del sistema;
+- usar menús propios (como `ChipSelect` en `RuleWizard.tsx`), no el `<select>` del sistema, cuya lista abierta no sigue el tema;
 - verificarse con Playwright (`npm run dev`) a 1024×700, 1366×768 y 1920×1080, antes y después del cambio: sin `scrollWidth > clientWidth` y con el botón principal visible.
 
 `App.tsx` renderiza `DeviceHome.tsx`, que siempre arranca en la bienvenida (foto + tres pasos; con dispositivos guardados ofrece "Ver mis dispositivos" y "Nuevo dispositivo", sin ellos "Crear mi primer dispositivo") y de ahí pasa a la lista de dispositivos guardados (crear, abrir, eliminar con confirmación en línea; un archivo dañado sale como tarjeta aparte sin tumbar la lista). Al abrir uno monta `RecipeEditor` y, al volver, recarga la lista. **No hay botón "Guardar"**: `useAutosave.ts` guarda ~600 ms después del último cambio (y al volver/cerrar), encadenando las escrituras. El formato y su saneado viven en `src/compiler/deviceFile.ts` (puro, `version` para migraciones; descarta aparatos de tipo desconocido y las reglas que los usan, regenera ids duplicados y corrige pines con `resolvePinConflicts`) y el acceso a disco en `src/storage/deviceStore.ts`.
