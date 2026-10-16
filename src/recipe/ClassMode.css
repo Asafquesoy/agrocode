@@ -906,3 +906,195 @@
     font-size: 0.9rem;
   }
 }
+
+/* --- Introducción: qué es Agrocode --- */
+
+.cm__progress-logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  object-fit: contain;
+}
+
+.cm__progress button.active .cm__progress-logo {
+  background: var(--green-night);
+  border-radius: 50%;
+  padding: 0.15rem;
+}
+
+.cm-intro {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.cm-intro__flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.cm-intro__flow .cm__arrow {
+  align-self: center;
+}
+
+.cm-intro__why {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.cm-intro__step {
+  animation: cm-pop 0.45s ease both;
+  animation-delay: calc(var(--i) * 220ms);
+}
+
+.cm-intro__step--brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-color: var(--color-accent);
+}
+
+.cm-intro__step--brand .cm__label {
+  margin-bottom: 0.3rem;
+}
+
+.cm-intro__step--solution {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+.cm-intro__logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  margin-bottom: 0.3rem;
+}
+
+.cm-intro__quote {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.cm-intro__text {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.cm-intro__next {
+  margin: 0;
+  padding: 0.8rem 1.1rem;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-accent-bg);
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+  animation: cm-pop 0.45s ease both;
+  animation-delay: calc(var(--i) * 220ms);
+}
+
+.cm-intro__next strong {
+  color: var(--color-accent);
+}
+
+/* Respuesta del analizador al provocar un error: frase sencilla + detalle técnico. */
+.cm__tech {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+@media (max-width: 1500px) {
+  .cm-intro {
+    gap: 0.9rem;
+  }
+
+  .cm-intro__quote {
+    font-size: 1.2rem;
+  }
+
+  .cm-intro__text,
+  .cm-intro__next {
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .cm-intro {
+    gap: 0.7rem;
+  }
+
+  .cm-intro__flow {
+    gap: 0.5rem;
+  }
+
+  .cm-intro__why {
+    gap: 0.7rem;
+  }
+
+  .cm-intro__logo {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .cm-intro__quote {
+    font-size: 1.05rem;
+  }
+
+  .cm-intro__text,
+  .cm-intro__next {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .cm-intro__next {
+    padding: 0.55rem 0.8rem;
+  }
+}
+
+/* Si no cabe, que no se corte por arriba: se alinea al inicio y se desplaza. */
+.cm-intro {
+  justify-content: safe center;
+}
+
+@media (max-width: 1200px) {
+  .cm-intro__step.cm__card {
+    padding: 0.7rem 0.85rem;
+  }
+
+  .cm-intro__quote {
+    font-size: 0.98rem;
+  }
+
+  .cm-intro__text,
+  .cm-intro__next {
+    font-size: 0.9rem;
+  }
+
+  .cm-intro .cm__label {
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 1500px) and (min-width: 1201px) {
+  .cm__ir-wrap {
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .cm-ir td,
+  .cm-ir th {
+    padding-inline: 0.5rem;
+  }
+}

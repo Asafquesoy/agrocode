@@ -129,7 +129,9 @@ function WriteTab({ registry }: { registry: DeviceRegistry }) {
 
 // Cuádruplos agrupados por regla: una fila separadora con el nombre de la
 // regla y debajo sus instrucciones (op, arg1, arg2, resultado).
-export function QuadrupleTable({ ir }: { ir: IRProgram }) {
+const DEFAULT_IR_HEADERS = ["#", "Operación", "Arg1", "Arg2", "Resultado"];
+
+export function QuadrupleTable({ ir, headers = DEFAULT_IR_HEADERS }: { ir: IRProgram; headers?: string[] }) {
   const firstRuleStart = ir.rules.length > 0 ? ir.rules[0].from : ir.quadruples.length;
   const row = (i: number) => {
     const q = ir.quadruples[i];
@@ -162,11 +164,9 @@ export function QuadrupleTable({ ir }: { ir: IRProgram }) {
       <table className="output-panel__ir">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Operación</th>
-            <th>Arg1</th>
-            <th>Arg2</th>
-            <th>Resultado</th>
+            {headers.map((h) => (
+              <th key={h}>{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>{rows}</tbody>

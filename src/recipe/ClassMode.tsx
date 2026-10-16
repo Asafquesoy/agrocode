@@ -20,63 +20,74 @@ import "./ClassMode.css";
 // datos reales del dispositivo abierto, lo que entra y lo que sale.
 
 interface Stage {
-  id: "rule" | "lexer" | "parser" | "semantic" | "ir" | "cpp" | "board";
+  id: "intro" | "rule" | "lexer" | "parser" | "semantic" | "ir" | "cpp" | "board";
   short: string;
   title: string;
   blurb: string;
   analogy: string;
 }
 
+// La etapa 0 es la introducción (qué es Agrocode); las 7 siguientes son las del compilador.
 const STAGES: Stage[] = [
+  {
+    id: "intro",
+    short: "¿Qué es?",
+    title: "¿Qué es Agrocode?",
+    blurb:
+      "Agrocode es una aplicación para que cualquier persona programe una pequeña computadora del campo (el ESP32) sin escribir código: cuenta con sus palabras qué quiere que pase y Agrocode lo convierte en un programa.",
+    analogy: "Un traductor que entiende al agricultor y le habla a la máquina.",
+  },
   {
     id: "rule",
     short: "Tu regla",
     title: "Tu regla",
     blurb:
-      "Todo empieza con una idea en español: «si hace calor, enciende el LED rojo». La placa no entiende español, así que un compilador hace de traductor.",
+      "Todo empieza con una idea en español: «si hace calor, enciende el LED rojo». La placa no entiende español, así que un compilador (un programa traductor) hace de intermediario.",
     analogy: "Como un traductor entre dos idiomas.",
   },
   {
     id: "lexer",
     short: "Léxico",
     title: "Análisis léxico",
-    blurb: "El compilador corta el texto en piezas pequeñas, llamadas tokens, y le pone una etiqueta a cada una.",
+    blurb: "El compilador corta la regla en piezas pequeñas, llamadas tokens (fichas), y le pone una etiqueta a cada una.",
     analogy: "Separar una oración en palabras y decir cuál es verbo, cuál sustantivo…",
   },
   {
     id: "parser",
     short: "Sintáctico",
     title: "Análisis sintáctico",
-    blurb: "Revisa que las piezas estén en el orden correcto y las acomoda en un árbol que muestra qué depende de qué.",
+    blurb: "Revisa que las piezas estén en el orden correcto y las acomoda en un árbol, un esquema que muestra qué depende de qué.",
     analogy: "El análisis gramatical de una oración: sujeto, verbo, predicado.",
   },
   {
     id: "semantic",
     short: "Semántico",
     title: "Análisis semántico",
-    blurb: "Comprueba que la regla tenga sentido: que los nombres existan y que los tipos se puedan combinar. Si algo falla, se detiene aquí.",
-    analogy: "«La temperatura se come el LED» está bien escrito, pero no tiene sentido.",
+    blurb:
+      "Comprueba que la regla tenga sentido: que los nombres existan y que no se mezclen cosas que no van juntas (como comparar la temperatura con un foco). Si algo falla, se detiene aquí.",
+    analogy: "«El sensor se come al foco» está bien escrito, pero no tiene sentido.",
   },
   {
     id: "ir",
     short: "Intermedio",
     title: "Código intermedio",
     blurb:
-      "La regla se convierte en instrucciones muy simples, de una sola operación cada una, llamadas cuádruplos: (operación, dato 1, dato 2, resultado).",
+      "La regla se convierte en pasos muy pequeños, de una sola cosa cada uno. Se llaman cuádruplos porque cada paso tiene cuatro partes: qué hacer, dos datos y dónde guardar el resultado.",
     analogy: "Una receta de cocina, paso por paso.",
   },
   {
     id: "cpp",
     short: "C++",
     title: "Generación de código",
-    blurb: "Cada instrucción simple se traduce a C++, el lenguaje que entiende el ESP32 a través de Arduino.",
+    blurb: "Cada paso simple se traduce a C++, el idioma de programación que entiende el ESP32 (a través de Arduino).",
     analogy: "Pasar la receta al idioma del cocinero.",
   },
   {
     id: "board",
     short: "Al ESP32",
     title: "¡A la placa!",
-    blurb: "El C++ se compila a ceros y unos, se sube por el cable USB y el ESP32 empieza a ejecutarlo: lee el sensor y enciende los LED.",
+    blurb:
+      "El C++ se convierte en ceros y unos (el idioma de la máquina), se sube por el cable USB y el ESP32 empieza a ejecutarlo: lee el sensor y enciende los LED.",
     analogy: "Entregarle la receta al cocinero para que cocine.",
   },
 ];
@@ -117,9 +128,9 @@ const TYPE_RULE_TEXT: Record<string, string> = {
 
 const OP_TEXT: Record<string, string> = {
   LEER: "lee el valor del sensor",
-  SALTARF: "si la condición es falsa, salta al final de la regla",
-  ENCENDER: "pone el equipo en ALTO (se enciende)",
-  APAGAR: "pone el equipo en BAJO (se apaga)",
+  SALTARF: "si la condición no se cumple, salta al final de la regla",
+  ENCENDER: "enciende el equipo",
+  APAGAR: "apaga el equipo",
   ESPERAR: "pausa los segundos indicados",
   ETIQUETA: "marca el final de la regla",
   Y: "une dos condiciones: las dos deben cumplirse",
@@ -304,7 +315,7 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
                 onClick={() => setStep(i)}
                 aria-current={i === step ? "step" : undefined}
               >
-                <span>{i + 1}</span> {s.short}
+                {s.id === "intro" ? <img src="/logo.png" alt="" className="cm__progress-logo" /> : <span>{i}</span>} {s.short}
               </button>
             </li>
           ))}
@@ -313,16 +324,14 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
 
       <div className="cm__body">
         <aside className="cm__story">
-          <p className="cm__step">
-            Etapa {step + 1} de {STAGES.length}
-          </p>
+          <p className="cm__step">{stage.id === "intro" ? "Para empezar" : `Etapa ${step} de ${STAGES.length - 1}`}</p>
           <h2>{stage.title}</h2>
           <p className="cm__blurb">{stage.blurb}</p>
           <p className="cm__analogy">
             <strong>Es como…</strong> {stage.analogy}
           </p>
 
-          {device.rules.length > 1 && stage.id !== "board" && (
+          {device.rules.length > 1 && stage.id !== "board" && stage.id !== "intro" && (
             <div className="cm__rules">
               <p>Regla que estamos siguiendo:</p>
               <div>
@@ -337,6 +346,53 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
         </aside>
 
         <section className="cm__stage" key={`${stage.id}-${ruleIndex}`}>
+          {stage.id === "intro" && (
+            <div className="cm-intro">
+              <div className="cm-intro__flow">
+                <div className="cm__card cm-intro__step" style={{ "--i": 0 } as CSSProperties}>
+                  <p className="cm__label">El agricultor</p>
+                  <p className="cm-intro__quote">«Si la tierra está seca, enciende la bomba.»</p>
+                </div>
+                <span className="cm__arrow" aria-hidden="true">
+                  <ArrowIcon size={32} />
+                </span>
+                <div className="cm__card cm-intro__step cm-intro__step--brand" style={{ "--i": 1 } as CSSProperties}>
+                  <img src="/logo.png" alt="" className="cm-intro__logo" />
+                  <p className="cm__label">Agrocode</p>
+                  <p className="cm-intro__quote">Lo traduce al idioma de la placa.</p>
+                </div>
+                <span className="cm__arrow" aria-hidden="true">
+                  <ArrowIcon size={32} />
+                </span>
+                <div className="cm__card cm-intro__step" style={{ "--i": 2 } as CSSProperties}>
+                  <p className="cm__label">La placa en el campo</p>
+                  <p className="cm-intro__quote">Mide con sus sensores y riega sola, de día y de noche.</p>
+                </div>
+              </div>
+
+              <div className="cm-intro__why">
+                <div className="cm__card cm-intro__step" style={{ "--i": 3 } as CSSProperties}>
+                  <p className="cm__label">El problema</p>
+                  <p className="cm-intro__text">
+                    Para darle órdenes a estas placas hay que saber programar. Pero quien conoce el cultivo casi nunca sabe hacerlo, y
+                    contratar a alguien es caro y se vuelve a pagar con cada cambio.
+                  </p>
+                </div>
+                <div className="cm__card cm-intro__step cm-intro__step--solution" style={{ "--i": 4 } as CSSProperties}>
+                  <p className="cm__label">Para qué sirve</p>
+                  <p className="cm-intro__text">
+                    Riego y monitoreo automáticos sin saber programar. El agricultor anota sus sensores y equipos, arma reglas con un
+                    asistente y Agrocode revisa que tengan sentido antes de mandarlas a la placa: nunca llega algo equivocado.
+                  </p>
+                </div>
+              </div>
+
+              <p className="cm-intro__next" style={{ "--i": 5 } as CSSProperties}>
+                ¿Cómo lo traduce? Eso lo hace un <strong>compilador</strong>, y es lo que veremos en las siguientes {STAGES.length - 1} etapas →
+              </p>
+            </div>
+          )}
+
           {stage.id === "rule" && (
             <div className="cm__pair">
               <div className="cm__card">
@@ -422,7 +478,7 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
                     <li key={id} className="ok">
                       <CheckIcon size={20} />
                       <span>
-                        <strong>Regla de tipos {id}:</strong> {TYPE_RULE_TEXT[id] ?? TYPE_MATRIX.find((t) => t.id === id)?.result}
+                        <strong>Revisión {id}:</strong> {TYPE_RULE_TEXT[id] ?? TYPE_MATRIX.find((t) => t.id === id)?.result}
                       </span>
                     </li>
                   ))}
@@ -440,7 +496,8 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
                       <li key={i} className="bad">
                         <WarningIcon size={20} />
                         <span>
-                          <strong>{err.category.replace(/_/g, " ").toLowerCase()}</strong> ({err.rule}): {err.message}
+                          <strong>{TYPE_RULE_TEXT[err.rule] ?? err.message}</strong>
+                          {TYPE_RULE_TEXT[err.rule] && <small className="cm__tech">{err.message}</small>}
                         </span>
                       </li>
                     ))}
@@ -461,7 +518,7 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
               {ir ? (
                 <div className="cm__ir-wrap">
                   <div className="cm-ir">
-                    <QuadrupleTable ir={ir} />
+                    <QuadrupleTable ir={ir} headers={["#", "Qué hace", "Dato 1", "Dato 2", "Guarda en"]} />
                   </div>
                   <ul className="cm__ops">
                     {usedOps.map((op) => (
@@ -469,6 +526,11 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
                         <code>{op}</code> {OP_TEXT[op] ?? ""}
                       </li>
                     ))}
+                    {ir.quadruples.some((q) => q.result?.startsWith("t")) && (
+                      <li>
+                        <code>t1, t2…</code> notas donde se guarda un resultado para usarlo después
+                      </li>
+                    )}
                   </ul>
                 </div>
               ) : (
@@ -482,8 +544,8 @@ export function ClassMode({ device, onClose }: { device: Device; onClose: () => 
           {stage.id === "cpp" && (
             <div className="cm__card cm__card--wide cm__cpp">
               <p className="cm__label">
-                {ir ? `${ir.quadruples.length} instrucciones simples → ${loopLines.length} líneas de C++` : "C++"} · se omite la preparación
-                (pines y sensor)
+                {ir ? `${ir.quadruples.length} pasos simples → ${loopLines.length} líneas de C++` : "C++"} · solo la parte que la placa
+                repite una y otra vez
               </p>
               <div className="cm__cpp-scroll">
                 <CodeBlock lines={loopLines} highlight={(t) => <CppLine text={t} />} />
