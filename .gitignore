@@ -40,3 +40,7 @@ src-tauri/gen/schemas
 *.pdf
 *.docx
 
+
+# Pruebas con Playwright y capturas de pantalla (no se suben)
+.playwright-mcp/
+Captura de pantalla*.png
