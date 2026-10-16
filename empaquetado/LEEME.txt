@@ -16,7 +16,7 @@ PASOS EN LA OTRA COMPUTADORA (Windows 11)
   2. Doble clic en "Instalar.bat".
   3. Cuando Windows pregunte por permisos de administrador (para el driver),
      acepta. Es el unico paso que lo pide.
-  4. Al terminar, abre "agrocode-app" desde el escritorio o el menu Inicio.
+  4. Al terminar, abre "Agrocode" desde el escritorio o el menu Inicio.
   5. Conecta el ESP32 con el cable USB.
 
 PARA USARLO

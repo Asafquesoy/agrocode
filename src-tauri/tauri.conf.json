@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "agrocode-app",
+  "productName": "Agrocode",
   "version": "0.1.0",
   "identifier": "com.omara.agrocode-app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "agrocode-app",
+        "title": "Agrocode",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,

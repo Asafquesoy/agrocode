@@ -6,7 +6,7 @@ paquete. El resto se arma así (nada de esto se sube al repositorio, por su tama
 ```
 paquete/
   Instalar.bat   Instalar-Agrocode.ps1   LEEME.txt      <- esta carpeta
-  instalador/    agrocode-app_0.1.0_x64-setup.exe        <- npm run tauri build -- --bundles nsis
+  instalador/    Agrocode_0.1.0_x64-setup.exe            <- npm run tauri build -- --bundles nsis
   herramientas/arduino/                                  <- copia de %APPDATA%\com.omara.agrocode-app\arduino
   driver/        silabser.inf, silabser.cat, x64/silabser.sys  <- pnputil /export-driver
 ```
