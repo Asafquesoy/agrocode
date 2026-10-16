@@ -38,6 +38,16 @@
   min-width: 0;
 }
 
+/* Aviso: el programa cambió desde la última compilación. */
+.compile-panel__stale {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  min-width: 0;
+  color: var(--amber);
+}
+
 /* Mensajes de dos líneas: el icono queda arriba y no se encoge. */
 .compile-panel__ok,
 .compile-panel__error {
@@ -45,7 +55,8 @@
 }
 
 .compile-panel__ok svg,
-.compile-panel__error svg {
+.compile-panel__error svg,
+.compile-panel__stale svg {
   flex-shrink: 0;
   margin-top: 0.15rem;
 }

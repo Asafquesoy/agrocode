@@ -58,6 +58,9 @@ export function CompilePanel({ code }: { code: string }) {
   // null = todavía no se sabe; false = falta descargar herramientas.
   const [ready, setReady] = useState<boolean | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  // Código con el que se hizo la última compilación: si el agricultor cambia
+  // algo después, el resultado ya no corresponde al programa actual.
+  const [compiledCode, setCompiledCode] = useState<string | null>(null);
   const [stage, setStage] = useState<Etapa | null>(null);
   const [progress, setProgress] = useState<Progreso | null>(null);
   const [log, setLog] = useState<string[]>([]);
@@ -79,8 +82,12 @@ export function CompilePanel({ code }: { code: string }) {
   }, [log]);
 
   const working = status.kind === "working";
+  // Ya hay un resultado, pero de un programa distinto al de ahora (también
+  // cubre cambios hechos mientras compilaba).
+  const stale = (status.kind === "done" || status.kind === "error") && compiledCode !== code;
 
   const run = async () => {
+    setCompiledCode(code);
     setStatus({ kind: "working" });
     setStage(ready ? "compilando" : "descargando");
     setProgress(null);
@@ -111,7 +118,7 @@ export function CompilePanel({ code }: { code: string }) {
     <div className="compile-panel">
       <div className="compile-panel__bar">
         <button className="compile-panel__button" onClick={run} disabled={!available || working || !code}>
-          {ready === false ? "Descargar y compilar" : "Compilar para ESP32"}
+          {ready === false ? "Descargar y compilar" : stale ? "Volver a compilar" : "Compilar para ESP32"}
         </button>
 
         {!available && <span className="compile-panel__hint">Disponible en la app de escritorio.</span>}
@@ -125,12 +132,17 @@ export function CompilePanel({ code }: { code: string }) {
             {stageText(stage, progress)}
           </span>
         )}
-        {status.kind === "done" && (
+        {stale && (
+          <span className="compile-panel__stale" role="status">
+            <WarningIcon size={16} /> Hiciste cambios: hay que volver a compilar el programa.
+          </span>
+        )}
+        {!stale && status.kind === "done" && (
           <span className="compile-panel__ok" role="status" title={sizeSummary(status.result).detail}>
             <VerifiedIcon size={16} /> {sizeSummary(status.result).text}
           </span>
         )}
-        {status.kind === "error" && (
+        {!stale && status.kind === "error" && (
           <span className="compile-panel__error" role="status">
             <WarningIcon size={16} /> No se pudo compilar.
           </span>
@@ -141,7 +153,7 @@ export function CompilePanel({ code }: { code: string }) {
         <progress className="compile-panel__progress" value={progress.hecho} max={progress.total} />
       )}
 
-      {(hasLog || status.kind === "error") && (
+      {!stale && (hasLog || status.kind === "error") && (
         <details className="compile-panel__details" open={status.kind === "error"}>
           <summary>Ver detalles</summary>
           <pre className="compile-panel__log">

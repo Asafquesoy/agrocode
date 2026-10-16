@@ -43,12 +43,6 @@ export async function escucharCompilacion(handlers: {
     listen<string>("compilacion-linea", (e) => handlers.onLinea(e.payload)),
   ]);
   // Cancelar una suscripción nunca debe tapar el resultado de la compilación.
-  return () =>
-    unlisteners.forEach((un) => {
-      try {
-        un();
-      } catch {
-        /* suscripción ya cancelada */
-      }
-    });
+  // `un()` es asíncrona: su fallo es una promesa rechazada, no una excepción.
+  return () => unlisteners.forEach((un) => void Promise.resolve().then(un).catch(() => {}));
 }
