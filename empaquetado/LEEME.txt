@@ -1,0 +1,40 @@
+﻿AGROCODE - PAQUETE PARA LLEVAR
+==============================
+
+Instala el programa, las herramientas para compilar el ESP32 y el driver de la
+placa. No necesita internet.
+
+CONTENIDO
+  Instalar.bat            <- el que hay que abrir
+  Instalar-Agrocode.ps1   (lo usa Instalar.bat)
+  instalador\             el programa Agrocode
+  herramientas\arduino\   herramientas del ESP32 (varios GB)
+  driver\                 driver de la placa (chip CP210x)
+
+PASOS EN LA OTRA COMPUTADORA (Windows 11)
+  1. Copia toda esta carpeta a la computadora (o ejecutala desde la USB).
+  2. Doble clic en "Instalar.bat".
+  3. Cuando Windows pregunte por permisos de administrador (para el driver),
+     acepta. Es el unico paso que lo pide.
+  4. Al terminar, abre "agrocode-app" desde el escritorio o el menu Inicio.
+  5. Conecta el ESP32 con el cable USB.
+
+PARA USARLO
+  - Mis dispositivos -> "Kit de la clase" -> "Como funciona".
+  - En la ultima etapa aparece "ESP32 conectado (COMx)".
+  - Para SUBIR un programa: mantener pulsado el boton BOOT de la placa, pulsar
+    "Subir al ESP32" y soltarlo cuando diga "Subiendo...". Despues suelta BOOT y,
+    si no arranca solo, pulsa EN una vez.
+
+SI ALGO FALLA
+  - Windows dice "Windows protegio tu PC": pulsa "Mas informacion" y luego
+    "Ejecutar de todos modos". El instalador no esta firmado.
+  - La placa no aparece como conectada: abre el Administrador de dispositivos;
+    si el chip aparece con un signo de advertencia, ejecuta Instalar.bat otra vez
+    y acepta el permiso de administrador.
+  - Agrocode pide "descargar herramientas": la copia de herramientas no termino.
+    Vuelve a ejecutar Instalar.bat.
+  - Para empezar de cero, borra la carpeta
+    %APPDATA%\com.omara.agrocode-app  y vuelve a ejecutar Instalar.bat.
+
+NOTA: el driver instalado es el CP210x de Silicon Labs (version 11.6.0.420).
