@@ -13,7 +13,9 @@ export type ResultadoCompilacion = {
   ram_bytes: number | null;
   ram_porcentaje: number | null;
 };
-export type Etapa = "descargando" | "instalando" | "compilando";
+export type Etapa = "descargando" | "instalando" | "compilando" | "subiendo";
+// Placa ESP32 detectada por USB: el modelo (`fqbn`) lo reconoce el sistema solo.
+export type Placa = { puerto: string; fqbn: string; nombre: string };
 export type Progreso = { hecho: number; total: number };
 
 export const compilerAvailable = isTauri;
@@ -28,6 +30,14 @@ export function prepararEntorno(): Promise<void> {
 
 export function compilar(codigo: string): Promise<ResultadoCompilacion> {
   return invoke<ResultadoCompilacion>("compilar", { codigo });
+}
+
+export function detectarPlacas(): Promise<Placa[]> {
+  return invoke<Placa[]>("detectar_placas");
+}
+
+export function subir(codigo: string, placa: Placa): Promise<void> {
+  return invoke<void>("subir", { codigo, puerto: placa.puerto, fqbn: placa.fqbn });
 }
 
 // Se suscribe a los eventos de la operación en curso; devuelve la función que

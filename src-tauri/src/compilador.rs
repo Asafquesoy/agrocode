@@ -51,6 +51,15 @@ pub struct ResultadoCompilacion {
     ram_porcentaje: Option<u32>,
 }
 
+// Placa ESP32 detectada en un puerto serie: `fqbn` es el modelo que arduino-cli
+// reconoció (o el ESP32 genérico si solo se reconoció el chip USB).
+#[derive(Serialize)]
+pub struct Placa {
+    puerto: String,
+    fqbn: String,
+    nombre: String,
+}
+
 #[derive(Serialize, Clone)]
 struct Progreso {
     hecho: u64,
@@ -258,6 +267,15 @@ fn tamanos(salida: &str) -> Vec<(u64, Option<u32>)> {
         .collect()
 }
 
+async fn escribir_sketch(raiz: &Path, codigo: String) -> Result<String, String> {
+    let carpeta = raiz.join("sketch").join("agrocode");
+    tokio::fs::create_dir_all(&carpeta).await.map_err(|e| e.to_string())?;
+    tokio::fs::write(carpeta.join("agrocode.ino"), codigo)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(carpeta.to_string_lossy().into_owned())
+}
+
 #[tauri::command]
 pub async fn compilar(
     app: AppHandle,
@@ -274,13 +292,7 @@ pub async fn compilar(
     }
 
     etapa(&app, "compilando");
-    let carpeta = raiz.join("sketch").join("agrocode");
-    tokio::fs::create_dir_all(&carpeta).await.map_err(|e| e.to_string())?;
-    tokio::fs::write(carpeta.join("agrocode.ino"), codigo)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let carpeta_txt = carpeta.to_string_lossy().into_owned();
+    let carpeta_txt = escribir_sketch(&raiz, codigo).await?;
     let build = raiz.join("build").to_string_lossy().into_owned();
     let (ok, salida) = ejecutar(
         &app,
@@ -300,4 +312,95 @@ pub async fn compilar(
         ram_bytes: datos.map(|m| m.0),
         ram_porcentaje: datos.and_then(|m| m.1),
     })
+}
+
+// Chips USB-serie que traen las placas ESP32 de desarrollo: CP210x (Silicon
+// Labs), CH340 (WCH), FTDI y el USB nativo de Espressif.
+const VID_ESP32: [&str; 4] = ["10c4", "1a86", "0403", "303a"];
+
+fn normalizar_vid(vid: &str) -> String {
+    vid.trim_start_matches("0x").trim_start_matches("0X").to_lowercase()
+}
+
+// Busca placas ESP32 conectadas. No hay que elegir nada: si arduino-cli
+// reconoce el modelo se usa su fqbn; si solo se reconoce el chip USB, se usa el
+// ESP32 genérico, que sirve para casi todas las placas.
+#[tauri::command]
+pub async fn detectar_placas(app: AppHandle) -> Result<Vec<Placa>, String> {
+    let raiz = raiz(&app)?;
+    if !ejecutable(&raiz).exists() {
+        return Ok(vec![]);
+    }
+    let salida = comando(&raiz)
+        .args(["board", "list", "--format", "json"])
+        .output()
+        .await
+        .map_err(|e| format!("No se pudo iniciar arduino-cli: {e}"))?;
+    let json: serde_json::Value = serde_json::from_slice(&salida.stdout)
+        .map_err(|e| format!("Respuesta inesperada de arduino-cli: {e}"))?;
+
+    let mut placas = vec![];
+    for detectado in json["detected_ports"].as_array().into_iter().flatten() {
+        let puerto = &detectado["port"];
+        if puerto["protocol"] != "serial" {
+            continue;
+        }
+        let Some(direccion) = puerto["address"].as_str() else { continue };
+
+        let modelo = detectado["matching_boards"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .find(|b| b["fqbn"].as_str().is_some_and(|f| f.starts_with("esp32:esp32:")));
+        if let Some(m) = modelo {
+            placas.push(Placa {
+                puerto: direccion.to_string(),
+                fqbn: m["fqbn"].as_str().unwrap_or(FQBN).to_string(),
+                nombre: m["name"].as_str().unwrap_or("ESP32").to_string(),
+            });
+            continue;
+        }
+        let vid = puerto["properties"]["vid"].as_str().map(normalizar_vid);
+        if vid.is_some_and(|v| VID_ESP32.contains(&v.as_str())) {
+            placas.push(Placa {
+                puerto: direccion.to_string(),
+                fqbn: FQBN.to_string(),
+                nombre: "ESP32".to_string(),
+            });
+        }
+    }
+    Ok(placas)
+}
+
+// Compila (casi instantáneo si no cambió nada) y sube el sketch a la placa.
+#[tauri::command]
+pub async fn subir(
+    app: AppHandle,
+    ocupado: State<'_, Ocupado>,
+    codigo: String,
+    puerto: String,
+    fqbn: String,
+) -> Result<(), String> {
+    if puerto.is_empty() || puerto.starts_with('-') || !fqbn.starts_with("esp32:esp32:") {
+        return Err("Placa o puerto no válidos.".into());
+    }
+    let _guardia = ocupado
+        .0
+        .try_lock()
+        .map_err(|_| "Ya hay una operación en curso.".to_string())?;
+    let raiz = raiz(&app)?;
+    if !ejecutable(&raiz).exists() {
+        return Err("Las herramientas de compilación no están instaladas.".into());
+    }
+
+    etapa(&app, "subiendo");
+    let carpeta_txt = escribir_sketch(&raiz, codigo).await?;
+    let build = raiz.join("build").to_string_lossy().into_owned();
+    let (ok, salida) = ejecutar(
+        &app,
+        &raiz,
+        &["compile", "--upload", "--port", &puerto, "--fqbn", &fqbn, "--build-path", &build, &carpeta_txt],
+    )
+    .await?;
+    if ok { Ok(()) } else { Err(salida) }
 }

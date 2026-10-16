@@ -10,7 +10,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             compilador::verificar_entorno,
             compilador::preparar_entorno,
-            compilador::compilar
+            compilador::compilar,
+            compilador::detectar_placas,
+            compilador::subir
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

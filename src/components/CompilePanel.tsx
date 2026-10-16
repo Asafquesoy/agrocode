@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   compilar,
   compilerAvailable,
+  detectarPlacas,
   escucharCompilacion,
   prepararEntorno,
+  subir,
   verificarEntorno,
   type Etapa,
+  type Placa,
   type Progreso,
   type ResultadoCompilacion,
 } from "./compileEngine";
@@ -13,10 +16,12 @@ import { VerifiedIcon, WarningIcon } from "./Icons";
 import "./CompilePanel.css";
 
 const MAX_LOG_LINES = 400;
+const BOARD_POLL_MS = 3000;
 
 type Status =
   | { kind: "idle" }
   | { kind: "working" }
+  | { kind: "uploaded" }
   | { kind: "done"; result: ResultadoCompilacion }
   | { kind: "error"; message: string };
 
@@ -28,6 +33,8 @@ function stageText(stage: Etapa | null, progress: Progreso | null): string {
     }
     case "instalando":
       return "Instalando el soporte para ESP32… (puede tardar varios minutos)";
+    case "subiendo":
+      return "Subiendo el programa al ESP32… no lo desconectes";
     default:
       return "Compilando…";
   }
@@ -64,6 +71,8 @@ export function CompilePanel({ code }: { code: string }) {
   const [stage, setStage] = useState<Etapa | null>(null);
   const [progress, setProgress] = useState<Progreso | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  // Placas ESP32 conectadas por USB (se revisa solo cada pocos segundos).
+  const [boards, setBoards] = useState<Placa[]>([]);
   const logEnd = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,14 +86,30 @@ export function CompilePanel({ code }: { code: string }) {
     };
   }, [available]);
 
+  const working = status.kind === "working";
+
+  useEffect(() => {
+    if (!available || !ready || working) return;
+    let cancelled = false;
+    const poll = () =>
+      detectarPlacas()
+        .then((found) => !cancelled && setBoards((prev) => (JSON.stringify(prev) === JSON.stringify(found) ? prev : found)))
+        .catch(() => !cancelled && setBoards([]));
+    poll();
+    const timer = setInterval(poll, BOARD_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [available, ready, working]);
+
   useEffect(() => {
     logEnd.current?.scrollIntoView({ block: "end" });
   }, [log]);
 
-  const working = status.kind === "working";
   // Ya hay un resultado, pero de un programa distinto al de ahora (también
   // cubre cambios hechos mientras compilaba).
-  const stale = (status.kind === "done" || status.kind === "error") && compiledCode !== code;
+  const stale = (status.kind === "done" || status.kind === "uploaded" || status.kind === "error") && compiledCode !== code;
 
   const run = async () => {
     setCompiledCode(code);
@@ -112,6 +137,30 @@ export function CompilePanel({ code }: { code: string }) {
     }
   };
 
+  const upload = async () => {
+    const board = boards[0];
+    if (!board) return;
+    setCompiledCode(code);
+    setStatus({ kind: "working" });
+    setStage("compilando");
+    setProgress(null);
+    setLog([]);
+    let stop: (() => void) | null = null;
+    try {
+      stop = await escucharCompilacion({
+        onEtapa: setStage,
+        onProgreso: setProgress,
+        onLinea: (line) => setLog((prev) => [...prev, line].slice(-MAX_LOG_LINES)),
+      });
+      await subir(code, board);
+      setStatus({ kind: "uploaded" });
+    } catch (e) {
+      setStatus({ kind: "error", message: typeof e === "string" ? e : ((e as Error).message ?? String(e)) });
+    } finally {
+      stop?.();
+    }
+  };
+
   const hasLog = log.length > 0;
 
   return (
@@ -121,10 +170,23 @@ export function CompilePanel({ code }: { code: string }) {
           {ready === false ? "Descargar y compilar" : stale ? "Volver a compilar" : "Compilar para ESP32"}
         </button>
 
+        {available && ready && (
+          <button className="compile-panel__button" onClick={upload} disabled={working || !code || boards.length === 0}>
+            Subir al ESP32
+          </button>
+        )}
+
         {!available && <span className="compile-panel__hint">Disponible en la app de escritorio.</span>}
         {available && ready === false && status.kind === "idle" && (
           <span className="compile-panel__hint">
             La primera vez hay que descargar las herramientas del ESP32 (unos 2 GB y 6 GB en disco; puede tardar bastante).
+          </span>
+        )}
+        {available && ready && !working && (
+          <span className="compile-panel__hint" role="status">
+            {boards.length > 0
+              ? `${boards[0].nombre} conectado (${boards[0].puerto})`
+              : "Conecta el ESP32 con el cable USB"}
           </span>
         )}
         {working && (
@@ -142,9 +204,14 @@ export function CompilePanel({ code }: { code: string }) {
             <VerifiedIcon size={16} /> {sizeSummary(status.result).text}
           </span>
         )}
+        {!stale && status.kind === "uploaded" && (
+          <span className="compile-panel__ok" role="status">
+            <VerifiedIcon size={16} /> Programa cargado en el ESP32
+          </span>
+        )}
         {!stale && status.kind === "error" && (
           <span className="compile-panel__error" role="status">
-            <WarningIcon size={16} /> No se pudo compilar.
+            <WarningIcon size={16} /> No se pudo {stage === "subiendo" ? "subir al ESP32" : "compilar"}.
           </span>
         )}
       </div>
