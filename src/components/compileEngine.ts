@@ -13,7 +13,7 @@ export type ResultadoCompilacion = {
   ram_bytes: number | null;
   ram_porcentaje: number | null;
 };
-export type Etapa = "descargando" | "instalando" | "compilando" | "subiendo";
+export type Etapa = "descargando" | "instalando" | "compilando" | "librerias" | "subiendo";
 // Placa ESP32 detectada por USB: el modelo (`fqbn`) lo reconoce el sistema solo.
 export type Placa = { puerto: string; fqbn: string; nombre: string };
 export type Progreso = { hecho: number; total: number };

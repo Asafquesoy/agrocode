@@ -33,6 +33,8 @@ function stageText(stage: Etapa | null, progress: Progreso | null): string {
     }
     case "instalando":
       return "Instalando el soporte para ESP32… (puede tardar varios minutos)";
+    case "librerias":
+      return "Instalando la librería del sensor…";
     case "subiendo":
       return "Subiendo el programa al ESP32… no lo desconectes";
     default:

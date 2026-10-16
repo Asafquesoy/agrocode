@@ -6,10 +6,14 @@ import type { Device } from "./device.ts";
 
 // Solo ADC1: siguen funcionando cuando se active el Wi-Fi (Fase 7).
 export const ANALOG_PINS = [34, 35, 32, 33, 36, 39];
-// Sin pines de arranque (0, 2, 5, 12, 15) ni de flash.
-export const OUTPUT_PINS = [26, 27, 14, 25, 13, 23, 19, 18, 17, 16];
-// Bus I2C compartido: varios sensores I2C conviven en el mismo pin SDA.
+// Sin pines de arranque (0, 2, 12, 15) ni de flash. Los seis primeros son los
+// canales R/G/B de los dos LED del kit de la clase (LED 1: 4, 18, 5; LED 2: 25,
+// 27, 26); el 5 es de arranque pero sirve como salida una vez encendida la placa.
+export const OUTPUT_PINS = [4, 18, 5, 25, 27, 26, 14, 13, 23, 19, 17, 16];
+// Bus I2C compartido: varios sensores I2C conviven en el mismo pin SDA (21) y
+// el mismo reloj SCL (22).
 export const I2C_PIN = 21;
+export const I2C_SCL_PIN = 22;
 
 export type PinTarget = { role: "SENSOR"; kind: SensorKindId } | { role: "ACTUADOR" };
 

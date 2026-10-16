@@ -267,6 +267,39 @@ fn tamanos(salida: &str) -> Vec<(u64, Option<u32>)> {
         .collect()
 }
 
+// Librerías de Arduino que usa el sketch generado: (archivo que incluye, nombre
+// en el índice de librerías). Se instalan solas la primera vez que hacen falta.
+const LIBRERIAS: [(&str, &str); 1] = [("Adafruit_AHTX0.h", "Adafruit AHTX0")];
+
+async fn asegurar_librerias(app: &AppHandle, raiz: &Path, codigo: &str) -> Result<(), String> {
+    let necesarias: Vec<&str> = LIBRERIAS
+        .iter()
+        .filter(|(cabecera, _)| codigo.contains(cabecera))
+        .map(|(_, nombre)| *nombre)
+        .collect();
+    if necesarias.is_empty() {
+        return Ok(());
+    }
+    let instaladas = comando(raiz)
+        .args(["lib", "list"])
+        .output()
+        .await
+        .map_err(|e| format!("No se pudo iniciar arduino-cli: {e}"))?;
+    let texto = String::from_utf8_lossy(&instaladas.stdout).into_owned();
+    for nombre in necesarias {
+        if texto.contains(nombre) {
+            continue;
+        }
+        etapa(app, "librerias");
+        let (ok, salida) = ejecutar(app, raiz, &["lib", "install", nombre]).await?;
+        if !ok {
+            return Err(format!("No se pudo instalar la librería {nombre} (¿hay internet?).
+{salida}"));
+        }
+    }
+    Ok(())
+}
+
 async fn escribir_sketch(raiz: &Path, codigo: String) -> Result<String, String> {
     let carpeta = raiz.join("sketch").join("agrocode");
     tokio::fs::create_dir_all(&carpeta).await.map_err(|e| e.to_string())?;
@@ -291,6 +324,7 @@ pub async fn compilar(
         return Err("Las herramientas de compilación no están instaladas.".into());
     }
 
+    asegurar_librerias(&app, &raiz, &codigo).await?;
     etapa(&app, "compilando");
     let carpeta_txt = escribir_sketch(&raiz, codigo).await?;
     let build = raiz.join("build").to_string_lossy().into_owned();
@@ -393,6 +427,7 @@ pub async fn subir(
         return Err("Las herramientas de compilación no están instaladas.".into());
     }
 
+    asegurar_librerias(&app, &raiz, &codigo).await?;
     etapa(&app, "subiendo");
     let carpeta_txt = escribir_sketch(&raiz, codigo).await?;
     let build = raiz.join("build").to_string_lossy().into_owned();

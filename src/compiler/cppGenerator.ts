@@ -6,6 +6,7 @@ import type { Program } from "./ast.ts";
 import type { DeviceRegistry, RegistrySensor } from "./device.ts";
 import type { SensorValueType } from "./inferTypes.ts";
 import { generateIntermediateCode, type IRProgram, type IRRuleBlock, type Quadruple } from "./intermediateCode.ts";
+import { I2C_PIN, I2C_SCL_PIN } from "./pins.ts";
 
 const C_TYPES: Record<SensorValueType, string> = { ENTERO: "int", DECIMAL: "float", BOOLEANO: "bool" };
 
@@ -18,7 +19,13 @@ function cppOperator(op: string): string {
   return op === "=" ? "==" : op;
 }
 
-function quadrupleToCpp(q: Quadruple): string {
+// Líneas "AGRO ..." por el puerto serie: la app las lee para mostrar en vivo qué
+// mide la placa, qué regla se cumple y qué equipo se enciende o apaga.
+function cString(text: string): string {
+  return `"${text.replace(/[\\"]/g, "").replace(/[\r\n]+/g, " ")}"`;
+}
+
+function quadrupleToCpp(q: Quadruple, ruleId: string): string {
   switch (q.op) {
     case "<":
     case ">":
@@ -32,11 +39,14 @@ function quadrupleToCpp(q: Quadruple): string {
       return `  bool ${q.result} = ${q.arg1} || ${q.arg2};`;
     case "SALTARF":
       // Cada regla es un único SALTARF/ETIQUETA bien anidado: se emite como if.
-      return `  if (${q.arg1}) {`;
+      return `  Serial.printf("AGRO REGLA %s %d\\n", ${cString(ruleId)}, ${q.arg1} ? 1 : 0);
+  if (${q.arg1}) {`;
     case "ENCENDER":
-      return `    digitalWrite(PIN_${q.arg1}, HIGH);`;
+      return `    digitalWrite(PIN_${q.arg1}, HIGH);
+    Serial.println("AGRO ENCENDER ${q.arg1}");`;
     case "APAGAR":
-      return `    digitalWrite(PIN_${q.arg1}, LOW);`;
+      return `    digitalWrite(PIN_${q.arg1}, LOW);
+    Serial.println("AGRO APAGAR ${q.arg1}");`;
     case "ESPERAR":
       return `    delay(${Number(q.arg1) * 1000}); // ESPERAR ${q.arg1} s`;
     case "ETIQUETA":
@@ -52,7 +62,7 @@ function ruleToCpp(ir: IRProgram, block: IRRuleBlock): string {
     : "";
   const body = ir.quadruples
     .slice(block.from, block.to + 1)
-    .map(quadrupleToCpp)
+    .map((q) => quadrupleToCpp(q, block.id))
     .join("\n");
   return `  // Regla: ${commentSafe(block.name)}${windowComment}\n${body}`;
 }
@@ -64,7 +74,11 @@ function ruleToCpp(ir: IRProgram, block: IRRuleBlock): string {
 function readingToCpp(sensor: RegistrySensor, type: SensorValueType): string {
   const name = commentSafe(sensor.label);
   if (sensor.mode === "I2C") {
-    return `  ${C_TYPES[type]} lectura_${sensor.id} = leer_${sensor.id}(); // ${name} — implementar lectura I2C`;
+    // Temperatura y humedad del aire salen del mismo AHT20 (ver aht.getEvent en loop).
+    const raw = sensor.kind === "AIR_HUMIDITY" ? "aht_humedad.relative_humidity" : "aht_temperatura.temperature";
+    const value =
+      type === "DECIMAL" ? raw : type === "BOOLEANO" ? `${raw} != 0` : `(int)round(${raw})`;
+    return `  ${C_TYPES[type]} lectura_${sensor.id} = ${value}; // ${name} (AHT20) en ${sensor.unit || "%"}`;
   }
   const unit = sensor.unit || "%";
   if (type === "BOOLEANO") {
@@ -75,6 +89,11 @@ function readingToCpp(sensor: RegistrySensor, type: SensorValueType): string {
     return `  float lectura_${sensor.id} = ${sensor.min} + analogRead(PIN_${sensor.id}) * ${span} / 4095.0; // ${name} en ${unit}`;
   }
   return `  int lectura_${sensor.id} = map(analogRead(PIN_${sensor.id}), 0, 4095, ${sensor.min}, ${sensor.max}); // ${name} en ${unit}`;
+}
+
+function reportToCpp(sensor: RegistrySensor, type: SensorValueType): string {
+  const value = type === "DECIMAL" ? `%.1f\\n", (double)lectura_${sensor.id}` : `%d\\n", (int)lectura_${sensor.id}`;
+  return `  Serial.printf("AGRO LEER ${sensor.id} ${value});`;
 }
 
 export function irToCpp(ir: IRProgram, registry: DeviceRegistry): string {
@@ -103,31 +122,37 @@ export function irToCpp(ir: IRProgram, registry: DeviceRegistry): string {
   ].join("\n");
 
   const actuatorSetup = actuators.map((a) => `  pinMode(PIN_${a.id}, OUTPUT);`).join("\n");
+  // Temperatura y humedad del aire salen del mismo sensor AHT20 por I2C.
+  const usesI2c = sensors.some(({ def }) => def.mode === "I2C");
   const sensorSetup = sensors
-    .map(({ def }) => (def.mode === "ANALOG" ? `  pinMode(PIN_${def.id}, INPUT);` : `  // ${def.id}: inicializar sensor I2C`))
+    .filter(({ def }) => def.mode === "ANALOG")
+    .map(({ def }) => `  pinMode(PIN_${def.id}, INPUT);`)
     .join("\n");
+  const i2cSetup = `  Wire.begin(${I2C_PIN}, ${I2C_SCL_PIN}); // bus I2C: SDA, SCL
+  if (!aht.begin()) {
+    Serial.println("AGRO ERROR No se detecta el sensor AHT20");
+    while (true) delay(1000);
+  }`;
 
-  const readings = sensors.map(({ def, type }) => readingToCpp(def, type)).join("\n");
+  const readings = [
+    ...(usesI2c ? ["  sensors_event_t aht_humedad, aht_temperatura;", "  aht.getEvent(&aht_humedad, &aht_temperatura);"] : []),
+    ...sensors.map(({ def, type }) => readingToCpp(def, type)),
+    ...sensors.map(({ def, type }) => reportToCpp(def, type)),
+  ].join("\n");
 
   const rules = ir.rules.map((b) => ruleToCpp(ir, b)).join("\n\n");
-
-  // Las lecturas I2C llaman a leer_X(); sin una definición el sketch no compila,
-  // así que se emite un esqueleto que devuelve 0 hasta implementar el sensor.
-  const i2cStubs = sensors
-    .filter(({ def }) => def.mode === "I2C")
-    .map(({ def, type }) => `${C_TYPES[type]} leer_${def.id}() {\n  return 0; // TODO: lectura I2C de ${commentSafe(def.label)}\n}`)
-    .join("\n\n");
 
   return `// Generado por Agrocode a partir de las reglas del agricultor.
 // Cultivo: ${commentSafe(registry.cropLabel)}
 // NO editar a mano: los cambios se pierden al recompilar desde la app.
-
+${usesI2c ? "\n#include <Wire.h>\n#include <Adafruit_AHTX0.h>\n" : ""}
 ${pinDefs}
-${i2cStubs ? `\n${i2cStubs}\n` : ""}
+${usesI2c ? "\nAdafruit_AHTX0 aht; // sensor AHT20: temperatura y humedad del aire\n" : ""}
 void setup() {
   Serial.begin(115200);
 ${actuatorSetup}
 ${sensorSetup}
+${usesI2c ? i2cSetup : ""}
 }
 
 void loop() {

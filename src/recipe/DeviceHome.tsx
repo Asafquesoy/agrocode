@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { newStoredDevice, type StoredDevice } from "../compiler/deviceFile";
+import { newStoredKit } from "../compiler/kit";
 import { deleteDevice, listDevices, saveDevice, type StoredEntry } from "../storage/deviceStore";
 import { AlarmIcon, CropIcon, DropIcon, PlusIcon, RemoveIcon, WarningIcon } from "../components/Icons";
 import { RecipeEditor } from "./RecipeEditor";
@@ -70,6 +71,18 @@ export function DeviceHome() {
     setOpen(stored);
   }
 
+  // El ESP32 de la clase ya cableado (sensor AHT20 y dos LED RGB) con reglas listas.
+  async function createKit() {
+    const stored = newStoredKit();
+    try {
+      await saveDevice(stored);
+      setNotice(null);
+    } catch (e) {
+      setNotice(`No se pudo guardar el kit: ${(e as Error).message ?? e}`);
+    }
+    setOpen(stored);
+  }
+
   async function confirmDelete(id: string) {
     try {
       await deleteDevice(id);
@@ -95,11 +108,16 @@ export function DeviceHome() {
     <div className="device-home">
       <div className="device-home__top">
         <h1>Mis dispositivos</h1>
-        {entries && entries.length > 0 && (
-          <button className="device-home__new" onClick={() => void createDevice()}>
-            <PlusIcon size={16} /> Nuevo dispositivo
+        <div className="device-home__actions">
+          <button className="device-home__kit" onClick={() => void createKit()}>
+            <CropIcon size={16} /> Kit de la clase
           </button>
-        )}
+          {entries && entries.length > 0 && (
+            <button className="device-home__new" onClick={() => void createDevice()}>
+              <PlusIcon size={16} /> Nuevo dispositivo
+            </button>
+          )}
+        </div>
       </div>
 
       {notice && (

@@ -22,7 +22,7 @@ export type LogicalOperator = "Y" | "O";
 // lectura, la unidad y el rango. El pin nunca viene de aquí: lo asigna pins.ts.
 
 export type SensorKindId = "SOIL_MOISTURE" | "RAIN" | "TEMPERATURE" | "AIR_HUMIDITY";
-export type ActuatorKindId = "PUMP" | "VALVE" | "ALARM" | "OTHER";
+export type ActuatorKindId = "PUMP" | "VALVE" | "ALARM" | "LED" | "OTHER";
 
 export interface SensorKind {
   id: SensorKindId;
@@ -49,6 +49,7 @@ export const ACTUATOR_KINDS: ActuatorKind[] = [
   { id: "PUMP", label: "Bomba de riego" },
   { id: "VALVE", label: "Válvula" },
   { id: "ALARM", label: "Alarma / notificación" },
+  { id: "LED", label: "LED" },
   { id: "OTHER", label: "Otro equipo" },
 ];
 
