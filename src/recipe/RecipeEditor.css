@@ -170,6 +170,25 @@
   border-color: var(--color-accent);
 }
 
+/* Regla guardada con un error semántico (ver la pestaña Análisis). */
+.recipe-editor__rule--error,
+.recipe-editor__rule--error:hover {
+  border-color: var(--color-error-border);
+}
+
+.recipe-editor__rule-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 6px;
+  font-size: 13px;
+  color: var(--color-error);
+}
+
+.recipe-editor__rule-error svg {
+  flex: none;
+}
+
 .recipe-editor__rule-header {
   display: flex;
   align-items: center;

@@ -2,13 +2,14 @@ import { useMemo, useState } from "react";
 import type { Comparison, Expr, Rule } from "../compiler/ast";
 import { deviceRegistry, deviceToProgram, type Device } from "../compiler/device";
 import type { StoredDevice } from "../compiler/deviceFile";
+import { blockingErrors, checkProgram } from "../compiler/typeChecker";
 import { pendingSuggestions } from "./suggestions";
 import { useAutosave } from "./useAutosave";
 import { RuleWizard, canEditInWizard } from "./RuleWizard";
 import { DeviceSetup } from "./DeviceSetup";
 import { Breadcrumb, SaveBadge } from "./PageHeader";
 import { OutputPanel } from "../components/OutputPanel";
-import { EditIcon, PlusIcon, RemoveIcon } from "../components/Icons";
+import { EditIcon, PlusIcon, RemoveIcon, WarningIcon } from "../components/Icons";
 import "./RecipeEditor.css";
 
 // El slider siempre edita la primera comparación que aparezca en la regla.
@@ -47,6 +48,17 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
   const registry = useMemo(() => deviceRegistry(device), [device]);
   const program = useMemo(() => deviceToProgram(device), [device]);
   const suggestions = useMemo(() => pendingSuggestions(device), [device]);
+  // Reglas guardadas con un error semántico (el asistente permite guardarlas
+  // a propósito); el detalle se ve en la pestaña "Análisis".
+  const rulesWithErrors = useMemo(
+    () =>
+      new Set(
+        checkProgram(program, registry)
+          .filter((r) => blockingErrors([r]).length > 0)
+          .map((r) => r.ruleId)
+      ),
+    [program, registry]
+  );
 
   const canBuildRules = device.sensors.length > 0 && device.actuators.length > 0;
 
@@ -148,8 +160,13 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
               const value = Math.min(max, Math.max(min, raw));
               const fill = max > min ? ((value - min) / (max - min)) * 100 : 0;
               const editable = canEditInWizard(rule, registry);
+              const hasError = rulesWithErrors.has(rule.id);
               return (
-                <div key={rule.id} className="recipe-editor__rule" style={{ "--i": i } as React.CSSProperties}>
+                <div
+                  key={rule.id}
+                  className={`recipe-editor__rule${hasError ? " recipe-editor__rule--error" : ""}`}
+                  style={{ "--i": i } as React.CSSProperties}
+                >
                   <div className="recipe-editor__rule-header">
                     <span className="recipe-editor__rule-number">{String(i + 1).padStart(2, "0")}</span>
                     <span className="recipe-editor__rule-name">{rule.name}</span>
@@ -166,21 +183,29 @@ export function RecipeEditor({ stored, onBack }: { stored: StoredDevice; onBack:
                       <RemoveIcon size={16} />
                     </button>
                   </div>
-                  <div className="recipe-editor__rule-body">
-                    <input
-                      type="range"
-                      min={min}
-                      max={max}
-                      value={value}
-                      className="recipe-editor__slider"
-                      style={{ "--fill": `${fill}%` } as React.CSSProperties}
-                      onChange={(e) => adjustThreshold(rule.id, Number(e.target.value))}
-                    />
-                    <span className="recipe-editor__value">
-                      {value}
-                      {unit}
-                    </span>
-                  </div>
+                  {/* Sin número que ajustar (se compara con otra medición o un equipo) no hay slider. */}
+                  {first.right.kind === "Literal" && (
+                    <div className="recipe-editor__rule-body">
+                      <input
+                        type="range"
+                        min={min}
+                        max={max}
+                        value={value}
+                        className="recipe-editor__slider"
+                        style={{ "--fill": `${fill}%` } as React.CSSProperties}
+                        onChange={(e) => adjustThreshold(rule.id, Number(e.target.value))}
+                      />
+                      <span className="recipe-editor__value">
+                        {value}
+                        {unit}
+                      </span>
+                    </div>
+                  )}
+                  {hasError && (
+                    <p className="recipe-editor__rule-error">
+                      <WarningIcon size={14} /> Error semántico: revísalo en la pestaña «Análisis».
+                    </p>
+                  )}
                 </div>
               );
             })}

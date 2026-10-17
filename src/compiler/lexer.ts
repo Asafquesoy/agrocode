@@ -87,6 +87,7 @@ export function tokenize(source: string): Token[] {
       i++;
       continue;
     }
+    //Operadores relacionales: <, <=, >, >=, =. No hay != ni ==.
     if (c === "<" || c === ">") {
       if (source[i + 1] === "=") {
         tokens.push({ type: "RELATIONAL_OPERATOR", value: c + "=", line });

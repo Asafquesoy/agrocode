@@ -12,12 +12,24 @@ import {
   decimalLiteral,
   integerLiteral,
   logical,
+  sensorRef,
+  actuatorRef,
 } from "../compiler/ast";
 import { blockingErrors, checkProgram } from "../compiler/typeChecker";
-import { CheckIcon, ChevronIcon, CropIcon, EditIcon, PlusIcon, SENSOR_KIND_ICONS } from "../components/Icons";
+import {
+  ACTUATOR_KIND_ICONS,
+  CheckIcon,
+  ChevronIcon,
+  CropIcon,
+  EditIcon,
+  PlugIcon,
+  PlusIcon,
+  SENSOR_KIND_ICONS,
+  WarningIcon,
+} from "../components/Icons";
 import "./RuleWizard.css";
 
-type Step = "WHEN" | "WHAT" | "DURATION" | "SUMMARY";
+type Step = "WHEN" | "WHAT" | "DURATION" | "SUMMARY";//Que hace el asistente: paso 1 (condición), paso 2 (acción), paso 3 (duración, si aplica) y paso 4 (resumen).
 
 const STEPS: { id: Step; label: string }[] = [
   { id: "WHEN", label: "¿Cuándo?" },
@@ -26,9 +38,18 @@ const STEPS: { id: Step; label: string }[] = [
   { id: "SUMMARY", label: "Confirmar" },
 ];
 
-// Con qué se compara la medición elegida: un número entero (T1) o un número
-// con decimales (T2).
-type ComparisonMode = "INTEGER" | "DECIMAL";
+// Con qué se compara la medición elegida. INTEGER/DECIMAL son el caso normal
+// (T1/T2); SENSOR y ACTUATOR son equivocaciones que un agricultor puede
+// cometer de verdad — comparar dos mediciones entre sí (T9) o una medición con
+// un equipo (T6) — y que el analizador semántico debe poder rechazar.
+type ComparisonMode = "INTEGER" | "DECIMAL" | "SENSOR" | "ACTUATOR";
+
+const COMPARISON_MODES: { id: ComparisonMode; label: string }[] = [
+  { id: "INTEGER", label: "Un número" },
+  { id: "DECIMAL", label: "Un número con decimales" },
+  { id: "SENSOR", label: "Otra medición" },
+  { id: "ACTUATOR", label: "Un equipo" },
+];
 
 interface ConditionState {
   sensor: string;
@@ -36,6 +57,8 @@ interface ConditionState {
   mode: ComparisonMode;
   integerValue: number;
   decimalValue: number;
+  otherSensor: string;
+  otherActuator: string;
 }
 
 interface WizardState {
@@ -45,12 +68,17 @@ interface WizardState {
   condition2: ConditionState;
   actionType: "STATE" | "WAIT";
   stateActionType: "ENCENDER" | "APAGAR";
-  targetActuator: string;
+  targetActuator: string; // id de un equipo o, por error, de un sensor (I4/T8)
   seconds: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+// Para "Otra medición": un sensor distinto del elegido, si lo hay.
+function otherSensorThan(registry: DeviceRegistry, sensorId: string): string {
+  return registry.sensors.find((s) => s.id !== sensorId)?.id ?? sensorId;
 }
 
 function initialCondition(registry: DeviceRegistry, sensorId?: string): ConditionState {
@@ -62,6 +90,8 @@ function initialCondition(registry: DeviceRegistry, sensorId?: string): Conditio
     mode: "INTEGER",
     integerValue: start,
     decimalValue: start,
+    otherSensor: otherSensorThan(registry, sensor?.id ?? ""),
+    otherActuator: registry.actuators[0]?.id ?? "",
   };
 }
 
@@ -79,17 +109,26 @@ function initialState(registry: DeviceRegistry): WizardState {
 }
 
 function conditionFromComparison(c: Comparison, registry: DeviceRegistry): ConditionState | null {
-  if (c.right.kind !== "Literal") return null;
   // El asistente solo ofrece <, > e =.
   if (c.operator === "<=" || c.operator === ">=") return null;
   if (!registry.sensors.some((s) => s.id === c.left.sensor)) return null;
-  return {
-    sensor: c.left.sensor,
-    operator: c.operator,
-    mode: c.right.type === "ENTERO" ? "INTEGER" : "DECIMAL",
-    integerValue: c.right.value,
-    decimalValue: c.right.value,
-  };
+  const base = { ...initialCondition(registry, c.left.sensor), operator: c.operator };
+  const right = c.right;
+  if (right.kind === "Literal") {
+    return {
+      ...base,
+      mode: right.type === "ENTERO" ? "INTEGER" : "DECIMAL",
+      integerValue: right.value,
+      decimalValue: right.value,
+    };
+  }
+  if (right.kind === "SensorRef" && registry.sensors.some((s) => s.id === right.sensor)) {
+    return { ...base, mode: "SENSOR", otherSensor: right.sensor };
+  }
+  if (right.kind === "ActuatorRef" && registry.actuators.some((a) => a.id === right.actuator)) {
+    return { ...base, mode: "ACTUATOR", otherActuator: right.actuator };
+  }
+  return null;
 }
 
 // Reconstruye el estado del asistente a partir de una regla ya guardada, o
@@ -117,7 +156,8 @@ export function wizardStateFromRule(rule: Rule, registry: DeviceRegistry): Wizar
   if (rule.actions.length !== 1) return null;
   const action = rule.actions[0];
   if (action.kind === "StateAction") {
-    if (!registry.actuators.some((a) => a.id === action.actuator)) return null;
+    const exists = (id: string) => registry.actuators.some((a) => a.id === id) || registry.sensors.some((s) => s.id === id);
+    if (!exists(action.actuator)) return null;
     state.actionType = "STATE";
     state.stateActionType = action.action;
     state.targetActuator = action.actuator;
@@ -134,18 +174,29 @@ export function canEditInWizard(rule: Rule, registry: DeviceRegistry): boolean {
 
 function buildComparison(c: ConditionState): Comparison {
   if (c.mode === "INTEGER") return comparisonWith(c.sensor, c.operator, integerLiteral(c.integerValue));
-  return comparisonWith(c.sensor, c.operator, decimalLiteral(c.decimalValue));
+  if (c.mode === "DECIMAL") return comparisonWith(c.sensor, c.operator, decimalLiteral(c.decimalValue));
+  if (c.mode === "SENSOR") return comparisonWith(c.sensor, c.operator, sensorRef(c.otherSensor));
+  return comparisonWith(c.sensor, c.operator, actuatorRef(c.otherActuator));
 }
 
 function operatorText(op: RelationalOperator): string {
   return op === "<" ? "baja de" : op === ">" ? "sube de" : "es igual a";
 }
 
+// Lo que va después de "baja de / sube de": el número con su unidad, o el
+// nombre de la otra medición o del equipo.
+function comparedWithText(c: ConditionState, registry: DeviceRegistry): string {
+  if (c.mode === "SENSOR") return registry.sensors.find((s) => s.id === c.otherSensor)?.label ?? c.otherSensor;
+  if (c.mode === "ACTUATOR") return registry.actuators.find((a) => a.id === c.otherActuator)?.label ?? c.otherActuator;
+  const unit = registry.sensors.find((s) => s.id === c.sensor)?.unit ?? "";
+  return `${c.mode === "INTEGER" ? c.integerValue : c.decimalValue}${unit}`;
+}
+
 function describeCondition(c: ConditionState, registry: DeviceRegistry): string {
   const sensor = registry.sensors.find((s) => s.id === c.sensor);
   const name = sensor?.label.toLowerCase() ?? c.sensor;
-  const value = c.mode === "INTEGER" ? c.integerValue : c.decimalValue;
-  return `${name} ${operatorText(c.operator)} ${value}${sensor?.unit ?? ""}`;
+  const target = comparedWithText(c, registry);
+  return `${name} ${operatorText(c.operator)} ${c.mode === "SENSOR" || c.mode === "ACTUATOR" ? target.toLowerCase() : target}`;
 }
 
 // Los operadores que ofrece el asistente, en el orden del menú.
@@ -323,10 +374,11 @@ function ChipSelect<T extends string>({
   );
 }
 
-// Selector de condición: medición, operador y un número (entero o con
-// decimales), dentro de la caja verde que abre con "SI" (o con "Y"/"O" en la
-// segunda condición). Se usa dos veces: para la condición principal y para la
-// condición opcional que se agrega con "Y también" / "O también".
+// Selector de condición: medición, operador y con qué se compara (un número
+// entero o con decimales, otra medición o un equipo), dentro de la caja verde
+// que abre con "SI" (o con "Y"/"O" en la segunda condición). Se usa dos veces:
+// para la condición principal y para la condición opcional que se agrega con
+// "Y también" / "O también".
 function ConditionSelector({
   badge,
   condition,
@@ -363,6 +415,7 @@ function ConditionSelector({
               sensor: s.id,
               // El slider de otro sensor tiene otro rango: no se deja el valor fuera de él.
               integerValue: clamp(condition.integerValue, s.min, s.max),
+              otherSensor: condition.otherSensor === s.id ? otherSensorThan(registry, s.id) : condition.otherSensor,
             });
           }}
         />
@@ -375,22 +428,18 @@ function ConditionSelector({
       </div>
 
       <div className="wizard__type">
-        <span>Tipo de valor</span>
-        <div className="wizard__segmented" role="group" aria-label="Tipo de valor">
-          <button
-            className={condition.mode === "INTEGER" ? "selected" : ""}
-            aria-pressed={condition.mode === "INTEGER"}
-            onClick={() => onChange({ ...condition, mode: "INTEGER" })}
-          >
-            Un número
-          </button>
-          <button
-            className={condition.mode === "DECIMAL" ? "selected" : ""}
-            aria-pressed={condition.mode === "DECIMAL"}
-            onClick={() => onChange({ ...condition, mode: "DECIMAL" })}
-          >
-            Un número con decimales
-          </button>
+        <span>Comparar con</span>
+        <div className="wizard__segmented" role="group" aria-label="Comparar con">
+          {COMPARISON_MODES.map((m) => (
+            <button
+              key={m.id}
+              className={condition.mode === m.id ? "selected" : ""}
+              aria-pressed={condition.mode === m.id}
+              onClick={() => onChange({ ...condition, mode: m.id })}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -426,6 +475,35 @@ function ConditionSelector({
           {selectedSensor.unit && <span className="wizard__unit">{selectedSensor.unit}</span>}
         </div>
       )}
+
+      {condition.mode === "SENSOR" && (
+        <div className="wizard__value-row">
+          <ChipSelect
+            label="Otra medición"
+            value={condition.otherSensor}
+            options={registry.sensors
+              // Con un solo sensor no hay "otra": se ofrece el mismo (igual es T9).
+              .filter((s) => s.id !== condition.sensor || registry.sensors.length === 1)
+              .map((s) => ({ value: s.id, label: s.label, icon: SENSOR_KIND_ICONS[s.kind] ?? CropIcon }))}
+            onChange={(otherSensor) => onChange({ ...condition, otherSensor })}
+          />
+        </div>
+      )}
+
+      {condition.mode === "ACTUATOR" && (
+        <div className="wizard__value-row">
+          <ChipSelect
+            label="Equipo"
+            value={condition.otherActuator}
+            options={registry.actuators.map((a) => ({
+              value: a.id,
+              label: a.label,
+              icon: ACTUATOR_KIND_ICONS[a.kind] ?? PlugIcon,
+            }))}
+            onChange={(otherActuator) => onChange({ ...condition, otherActuator })}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -442,15 +520,11 @@ function ConditionSummary({
   onEdit: () => void;
 }) {
   const sensor = registry.sensors.find((s) => s.id === condition.sensor);
-  const value = condition.mode === "INTEGER" ? condition.integerValue : condition.decimalValue;
   return (
     <button className="wizard__collapsed" onClick={onEdit} title="Editar esta condición">
       <span>
         {sensor?.label ?? condition.sensor} {operatorText(condition.operator)}{" "}
-        <strong>
-          {value}
-          {sensor?.unit ?? ""}
-        </strong>
+        <strong>{comparedWithText(condition, registry)}</strong>
       </span>
       <EditIcon size={14} />
     </button>
@@ -532,16 +606,25 @@ export function RuleWizard({
     return { id: "regla-candidata", name, condition, actions: [action] };
   }, [state, registry]);
 
-  // Resguardo silencioso: con las opciones del asistente la regla siempre
-  // debería ser válida; si no lo fuera, no se deja guardar.
-  const isRuleValid = useMemo(() => {
+  // Revisión en vivo con el analizador real (el mismo checkProgram que usa
+  // OutputPanel) sobre un programa de una sola regla. Se recorren todos los
+  // resultados, no solo el de la regla: "encender un sensor" produce a la vez
+  // I4 (bajo "(declaraciones)") y T8 (en la regla).
+  const review = useMemo(() => {
     const candidateProgram: Program = {
       crop: registry.cropId,
       declarations: usedDeclarations([candidateRule], registry),
       rules: [candidateRule],
     };
-    return blockingErrors(checkProgram(candidateProgram, registry)).length === 0;
+    const results = checkProgram(candidateProgram, registry);
+    const ruleResult = results.find((r) => r.ruleId === candidateRule.id);
+    return {
+      errors: blockingErrors(results),
+      appliedRules: ruleResult?.appliedRules ?? [],
+      inferredType: ruleResult?.inferredType,
+    };
   }, [candidateRule, registry]);
+  const hasErrors = review.errors.length > 0;
 
   function finish() {
     // Al editar se conserva el id (y por tanto el lugar en la lista) y el horario.
@@ -552,7 +635,8 @@ export function RuleWizard({
     });
   }
 
-  const actuatorLabel = (id: string) => registry.actuators.find((a) => a.id === id)?.label ?? id;
+  const targetLabel = (id: string) =>
+    registry.actuators.find((a) => a.id === id)?.label ?? registry.sensors.find((s) => s.id === id)?.label ?? id;
 
   // A dónde llevan "Atrás" y "Siguiente" en cada paso (DURATION solo existe al elegir "esperar").
   const back: Step | null =
@@ -701,6 +785,19 @@ export function RuleWizard({
                       />
                     ))}
                   </div>
+                  {/* Un sensor solo mide: elegirlo aquí es un error a propósito (I4/T8). */}
+                  <p className="wizard__sublabel">Sensores (miden, no son equipos)</p>
+                  <div className="wizard__choices wizard__choices--equipment">
+                    {registry.sensors.map((sensor) => (
+                      <ChoiceCard
+                        key={sensor.id}
+                        selected={sensor.id === state.targetActuator}
+                        title={sensor.label}
+                        text={sensor.id === state.targetActuator ? "Sensor seleccionado" : "Haz clic para elegirlo"}
+                        onClick={() => setState((s) => ({ ...s, targetActuator: sensor.id }))}
+                      />
+                    ))}
+                  </div>
                 </>
               )}
             </>
@@ -710,13 +807,13 @@ export function RuleWizard({
             <div className="wizard__condition wizard__duration">
               <label>
                 Esperar
+                {/* Acepta decimales y 0 a propósito: el analizador los rechaza (T7/T5). */}
                 <input
                   type="number"
-                  min={1}
-                  step={1}
+                  step="any"
                   className="wizard__number"
                   value={state.seconds}
-                  onChange={(e) => setState((s) => ({ ...s, seconds: Math.max(1, Math.round(Number(e.target.value))) }))}
+                  onChange={(e) => setState((s) => ({ ...s, seconds: Number(e.target.value) }))}
                 />
                 segundos
               </label>
@@ -724,18 +821,53 @@ export function RuleWizard({
           )}
 
           {step === "SUMMARY" && (
-            <p className="wizard__summary">
-              <span className="wizard__summary-key">SI</span> {candidateRule.name},{" "}
-              <span className="wizard__summary-key">ENTONCES</span>{" "}
-              {state.actionType === "STATE" ? (
-                <>
-                  {state.stateActionType === "ENCENDER" ? "enciende" : "apaga"} {actuatorLabel(state.targetActuator)}
-                </>
+            <>
+              <p className="wizard__summary">
+                <span className="wizard__summary-key">SI</span> {candidateRule.name},{" "}
+                <span className="wizard__summary-key">ENTONCES</span>{" "}
+                {state.actionType === "STATE" ? (
+                  <>
+                    {state.stateActionType === "ENCENDER" ? "enciende" : "apaga"} {targetLabel(state.targetActuator)}
+                  </>
+                ) : (
+                  <>espera {state.seconds} segundos</>
+                )}
+                .
+              </p>
+
+              {hasErrors ? (
+                <div className="wizard__review wizard__review--error" role="alert">
+                  <p className="wizard__review-title">
+                    <WarningIcon size={16} /> El analizador semántico encontró{" "}
+                    {review.errors.length === 1 ? "un error" : `${review.errors.length} errores`}
+                  </p>
+                  <ul>
+                    {review.errors.map((err, i) => (
+                      <li key={i}>
+                        {err.message}{" "}
+                        <span className="wizard__review-detail">
+                          [{err.category}] · regla {err.rule}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="wizard__review-detail">
+                    Vuelve atrás para corregirla, o guárdala así y verás el error en la pestaña «Análisis».
+                  </p>
+                </div>
               ) : (
-                <>espera {state.seconds} segundos</>
+                <div className="wizard__review">
+                  <p className="wizard__review-title">
+                    <CheckIcon size={16} /> Revisada por el analizador semántico: la regla tiene sentido.
+                  </p>
+                  {review.inferredType && (
+                    <p className="wizard__review-detail">
+                      Resultado: <strong>{review.inferredType}</strong> · reglas aplicadas: {review.appliedRules.join(", ")}
+                    </p>
+                  )}
+                </div>
               )}
-              .
-            </p>
+            </>
           )}
         </div>
 
@@ -754,8 +886,8 @@ export function RuleWizard({
                 Siguiente
               </button>
             ) : (
-              <button className="wizard__next" onClick={finish} disabled={!isRuleValid}>
-                Guardar regla
+              <button className={`wizard__next${hasErrors ? " wizard__next--error" : ""}`} onClick={finish}>
+                {hasErrors ? "Guardar de todos modos" : "Guardar regla"}
               </button>
             )}
           </div>

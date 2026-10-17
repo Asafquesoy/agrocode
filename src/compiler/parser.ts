@@ -20,7 +20,7 @@ import type { Declaration, Expr, Operand, Program, Rule, Statement } from "./ast
 import { tokenize, type Token } from "./lexer.ts";
 import type { RelationalOperator } from "./catalog.ts";
 
-export class ParseError extends Error {
+export class ParseError extends Error { // Error sintáctico (no semántico) detectado por el parser.
   line: number;
   constructor(message: string, line: number) {
     super(`Error sintáctico (línea ${line}): ${message}`);
@@ -29,7 +29,8 @@ export class ParseError extends Error {
   }
 }
 
-class Cursor {
+class Cursor { // Cursor sobre la lista de tokens que produce el lexer. Permite avanzar y
+  // verificar el token actual, con manejo de errores sintácticos.
   private pos = 0;
   private tokens: Token[];
   constructor(tokens: Token[]) {
@@ -73,7 +74,7 @@ class Cursor {
   }
 }
 
-function parseOperand(cur: Cursor): Operand {
+function parseOperand(cur: Cursor): Operand { // Un operando puede ser un literal (número) o una referencia a un sensor o actuador.
   if (cur.isType("NUMBER")) {
     const t = cur.advance();
     const isDecimal = t.value.includes(".");
@@ -89,7 +90,7 @@ function parseOperand(cur: Cursor): Operand {
   throw new ParseError(`se esperaba un número o un identificador`, cur.current().line);
 }
 
-function parseComparison(cur: Cursor): Expr {
+function parseComparison(cur: Cursor): Expr { // Una comparación es siempre entre un sensor y un operando (literal o sensor/actuador).
   const left = cur.expectType("IDENTIFIER", "un identificador");
   const op = cur.expectType("RELATIONAL_OPERATOR", "un operador relacional (<, >, =, <=, >=)");
   const right = parseOperand(cur);
@@ -101,7 +102,7 @@ function parseComparison(cur: Cursor): Expr {
   };
 }
 
-function parseAtom(cur: Cursor): Expr {
+function parseAtom(cur: Cursor): Expr { // Un "átomo" es un paréntesis con una expresión dentro, o una comparación.
   if (cur.isType("LPAREN")) {
     cur.advance();
     const e = parseExpr(cur);
