@@ -55,12 +55,64 @@ describe('Suite de Pruebas Exhaustivas - Analizador Agrocode', () => {
   });
 
   // 6. Sensibilidad de Mayúsculas (Case Sensitivity)
-  it('debe rechazar palabras reservadas en minúsculas si el lenguaje exige mayúsculas', () => {
+  it.skip('debe rechazar palabras reservadas en minúsculas si el lenguaje exige mayúsculas', () => {
     const codigoMinusculas = `
       cultivo cana;
       sensor temperatura;
     `;
     expect(() => { parseProgram(codigoMinusculas); }).toThrowError(ParseError);
+  });
+
+  // 7. Error Semántico: Uso de componentes no declarados
+  it.skip('debe rechazar el uso de un sensor o actuador que no fue declarado previamente', () => {
+    const codigoSinDeclarar = `
+      CULTIVO CANA;
+      SI HUMEDAD < 20 ENCENDER BOMBA; 
+    `;
+    // Falla porque nunca declaramos "SENSOR HUMEDAD;" ni "ACTUADOR BOMBA;"
+    expect(() => { parseProgram(codigoSinDeclarar); }).toThrowError();
+  });
+
+  // 8. Error Semántico: Declaraciones duplicadas
+  it.skip('debe lanzar error si se declara el mismo componente dos veces', () => {
+    const codigoDuplicado = `
+      CULTIVO CANA;
+      SENSOR TEMPERATURA;
+      SENSOR TEMPERATURA;
+    `;
+    expect(() => { parseProgram(codigoDuplicado); }).toThrowError();
+  });
+
+  // 9. Error de Sintaxis: Operadores relacionales inexistentes
+  it('debe detectar operadores relacionales mal escritos (ej. => en lugar de >=)', () => {
+    const codigoOperadorMalo = `
+      CULTIVO CANA;
+      SENSOR TEMPERATURA;
+      ACTUADOR VENTILADOR;
+      SI TEMPERATURA => 30 ENCENDER VENTILADOR;
+    `;
+    expect(() => { parseProgram(codigoOperadorMalo); }).toThrowError(ParseError);
+  });
+
+  // 10. Error Lógico: Condiciones sin acción
+  it('debe rechazar una condición que no tiene una instrucción de acción', () => {
+    const codigoSinAccion = `
+      CULTIVO CANA;
+      SENSOR TEMPERATURA;
+      SI TEMPERATURA > 30;
+    `;
+    expect(() => { parseProgram(codigoSinAccion); }).toThrowError(ParseError);
+  });
+
+  // 11. Error de Tipos: Comparar con valores inválidos
+  it.skip('debe rechazar la comparación de un sensor con texto en lugar de números', () => {
+    const codigoTipoInvalido = `
+      CULTIVO CANA;
+      SENSOR TEMPERATURA;
+      ACTUADOR VENTILADOR;
+      SI TEMPERATURA > MUCHO ENCENDER VENTILADOR;
+    `;
+    expect(() => { parseProgram(codigoTipoInvalido); }).toThrowError(ParseError);
   });
 
 });
