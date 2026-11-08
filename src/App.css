@@ -26,11 +26,8 @@
 .app__logo {
   width: 32px;
   height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  display: block;
+  object-fit: contain;
 }
 
 .app__wordmark {

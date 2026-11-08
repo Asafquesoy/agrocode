@@ -1,5 +1,5 @@
 import { DeviceHome } from "./recipe/DeviceHome";
-import { CropIcon, DevicesIcon } from "./components/Icons";
+import { DevicesIcon } from "./components/Icons";
 import "./App.css";
 
 function App() {
@@ -7,9 +7,7 @@ function App() {
     <main className="app">
       <header className="app__bar">
         <div className="app__brand">
-          <span className="app__logo" aria-hidden="true">
-            <CropIcon size={18} />
-          </span>
+          <img src="/logo.png" alt="" className="app__logo" />
           <span className="app__wordmark">Agrocode</span>
         </div>
         <nav className="app__nav" aria-label="Secciones">
