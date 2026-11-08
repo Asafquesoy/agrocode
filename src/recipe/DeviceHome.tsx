@@ -1,9 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { newStoredDevice, type StoredDevice } from "../compiler/deviceFile";
 import { deleteDevice, listDevices, saveDevice, type StoredEntry } from "../storage/deviceStore";
-import { AlarmIcon, CropIcon, DropIcon, PlusIcon, RemoveIcon, WarningIcon } from "../components/Icons";
+import { ArrowIcon, ConnectIcon, CropIcon, PlusIcon, RemoveIcon, RulesIcon, WarningIcon } from "../components/Icons";
 import { RecipeEditor } from "./RecipeEditor";
+// Foto de Marc Pell en Unsplash (licencia Unsplash: uso libre, sin atribución obligatoria).
+import fieldPhoto from "../assets/inicio-campo.jpg";
 import "./DeviceHome.css";
+
+const STEPS = [
+  {
+    Icon: CropIcon,
+    title: "Cuéntanos qué cultivas",
+    text: "Indica el cultivo o proceso agrícola que quieres controlar. Será el punto de partida de tu dispositivo.",
+    example: "Por ejemplo: un cultivo de tomates",
+  },
+  {
+    Icon: ConnectIcon,
+    title: "Agrega tus sensores y equipos",
+    text: "Elige sensores para medir las condiciones del entorno y equipos que puedas activar o desactivar.",
+    example: "Por ejemplo: humedad y riego",
+  },
+  {
+    Icon: RulesIcon,
+    title: "Arma tus reglas",
+    text: "Define condiciones para automatizar acciones: cuándo regar, encender un equipo o emitir una alerta.",
+    example: "Si baja la humedad, activa el riego",
+  },
+];
 
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
@@ -28,14 +51,16 @@ function uniqueName(existing: string[]): string {
   }
 }
 
-// Pantalla inicial: la lista de dispositivos guardados. Elegir uno (o crear uno
-// nuevo) abre su editor; al volver, la lista se recarga con lo último guardado.
+// Pantalla inicial: la bienvenida sale siempre al abrir la app (y mientras no haya
+// dispositivos); desde ahí se pasa a la lista de dispositivos guardados. Elegir uno
+// (o crear uno nuevo) abre su editor; al volver, la lista se recarga con lo último guardado.
 export function DeviceHome() {
   const [entries, setEntries] = useState<StoredEntry[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [open, setOpen] = useState<StoredDevice | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [welcome, setWelcome] = useState(true);
 
   const reload = useCallback(async () => {
     try {
@@ -67,6 +92,8 @@ export function DeviceHome() {
     } catch (e) {
       setNotice(`No se pudo guardar el dispositivo nuevo: ${(e as Error).message ?? e}`);
     }
+    // Al volver del editor se llega a la lista, no otra vez a la bienvenida.
+    setWelcome(false);
     setOpen(stored);
   }
 
@@ -91,11 +118,17 @@ export function DeviceHome() {
     return <RecipeEditor key={open.id} stored={open} onBack={backToList} />;
   }
 
+  const showWelcome = entries !== null && !loadError && (welcome || entries.length === 0);
+  const count = entries?.length ?? 0;
+
   return (
     <div className="device-home">
       <div className="device-home__top">
-        <h1>Mis dispositivos</h1>
-        {entries && entries.length > 0 && (
+        <div className="device-home__heading">
+          <h1>Mis dispositivos</h1>
+          <p>Un lugar para conectar tu cultivo, monitorear su entorno y automatizar su cuidado.</p>
+        </div>
+        {!showWelcome && entries && entries.length > 0 && (
           <button className="device-home__new" onClick={() => void createDevice()}>
             <PlusIcon size={16} /> Nuevo dispositivo
           </button>
@@ -115,37 +148,68 @@ export function DeviceHome() {
 
       {entries === null && <p className="device-home__empty">Cargando…</p>}
 
-      {entries && entries.length === 0 && !loadError && (
-        <div className="device-home__welcome">
-          <div className="device-home__welcome-intro">
-            <CropIcon size={40} />
-            <h2>Aún no tienes dispositivos</h2>
-            <p>Crea el primero para registrar tu cultivo, tus sensores y tus equipos.</p>
-            <button className="device-home__new device-home__new--big" onClick={() => void createDevice()}>
-              <PlusIcon size={18} /> Crear mi primer dispositivo
-            </button>
-          </div>
-          <ol className="device-home__steps">
-            <li>
-              <CropIcon size={26} />
-              <strong>1. Cuéntanos qué cultivas</strong>
-              <span>Escribe tu cultivo o el proceso que quieres controlar.</span>
-            </li>
-            <li>
-              <DropIcon size={26} />
-              <strong>2. Agrega tus sensores y equipos</strong>
-              <span>Elige lo que mide tu terreno y lo que enciende o apaga.</span>
-            </li>
-            <li>
-              <AlarmIcon size={26} />
-              <strong>3. Arma tus reglas</strong>
-              <span>Dile cuándo regar o avisar, con unos cuantos clics.</span>
-            </li>
-          </ol>
-        </div>
+      {showWelcome && (
+        <>
+          <section className="device-home__hero" aria-labelledby="device-home-welcome">
+            <div className="device-home__hero-text">
+              <p className="device-home__eyebrow">Tu campo, más conectado</p>
+              {count === 0 ? (
+                <>
+                  <h2 id="device-home-welcome">Aún no tienes dispositivos</h2>
+                  <p className="device-home__lead">
+                    Crea tu primer dispositivo para registrar tu cultivo, conectar sensores y equipos, y empezar a cuidar
+                    de tu campo desde un solo lugar.
+                  </p>
+                  <button className="device-home__new" onClick={() => void createDevice()}>
+                    <PlusIcon size={16} /> Crear mi primer dispositivo
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 id="device-home-welcome">Qué gusto verte de nuevo</h2>
+                  <p className="device-home__lead">
+                    Tienes {count} {count === 1 ? "dispositivo guardado" : "dispositivos guardados"}. Entra para revisar
+                    tu cultivo, tus sensores y tus reglas, o crea uno nuevo.
+                  </p>
+                  <div className="device-home__actions">
+                    <button className="device-home__new" onClick={() => setWelcome(false)}>
+                      Ver mis dispositivos <ArrowIcon size={16} />
+                    </button>
+                    <button className="device-home__secondary" onClick={() => void createDevice()}>
+                      <PlusIcon size={16} /> Nuevo dispositivo
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+            <img className="device-home__photo" src={fieldPhoto} alt="" />
+          </section>
+
+          <section className="device-home__guide" aria-labelledby="device-home-steps">
+            <div className="device-home__guide-head">
+              <h2 id="device-home-steps">De tu cultivo a la automatización</h2>
+              <p>Tres pasos para empezar, a tu ritmo.</p>
+            </div>
+            <ol className="device-home__steps">
+              {STEPS.map(({ Icon, title, text, example }, i) => (
+                <li key={title}>
+                  <div className="device-home__step-top">
+                    <span className="device-home__step-icon">
+                      <Icon size={20} />
+                    </span>
+                    <span className="device-home__step-number">Paso {i + 1}</span>
+                  </div>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                  <p className="device-home__step-example">{example}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </>
       )}
 
-      {entries && entries.length > 0 && (
+      {!showWelcome && entries && entries.length > 0 && (
         <ul className="device-home__list">
           {entries.map((entry) =>
             entry.ok ? (

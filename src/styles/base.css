@@ -1,50 +1,54 @@
-/* Tokens y fundamentos visuales de Agrocode.
-   Dirección: "consola de campo" — una app de escritorio, no una página web.
-   Oscuro comprometido (sin variante clara). El monoespaciado se reserva para
-   donde de verdad hay código (bloques de código, identificadores del
-   lenguaje); el resto de la interfaz usa Nunito para leerse amigable, no
-   técnica — el agricultor que usa esto no tiene por qué saber de tecnología. */
+/* Tokens y fundamentos visuales de Agrocode, tomados del diseño de Figma
+   "Agrocode – Interfaces": fondo claro, verde bosque como acento y Inter
+   para toda la interfaz. El monoespaciado se reserva para donde de verdad
+   hay código (bloques de código, identificadores del lenguaje). Una app de
+   escritorio, no una página web. */
 
 :root {
-  --font-display: "Nunito Variable", -apple-system, "Segoe UI", sans-serif;
-  --font-text: "Nunito Variable", -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --font-text: "Inter Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
 
-  --green-night: #0a1d11;
-  --green-forest: #0f2717;
-  --green-flag: #1e6b32;
-  --green-leaf: #4fa83d;
-  --lime: #a8dc3c;
-  --lime-light: #d6f05a;
-  --cream: #e6ead6;
-  --earth: #89a184;
-  --amber: #e0ac5a;
-  --brick: #e08a71;
+  --green-deep: #22392e;
+  --green: #2b5c45;
+  --green-hover: #224a37;
+  --sage: #5e6b62;
+  --mist: #e7efe1;
+  --line: #e1e6db;
+  --paper: #f6f7f2;
 
   /* Roles semánticos */
-  --color-bg: var(--green-night);
-  --color-surface: #0f2717;
-  --color-card: #143020;
-  --color-border: #1e4429;
-  --color-border-soft: #16331e;
-  --color-text: var(--cream);
-  --color-text-muted: var(--earth);
-  --color-accent: var(--lime);
-  --color-accent-dark: var(--lime-light);
-  --color-accent-bg: rgba(168, 220, 60, 0.08);
-  --color-error: var(--brick);
-  --color-error-bg: rgba(224, 138, 113, 0.1);
-  --color-error-border: #5c3226;
-  --color-warning: var(--amber);
+  --color-bg: var(--paper);
+  --color-surface: #ffffff;
+  --color-card: #fafbf7;
+  --color-border: var(--line);
+  --color-border-soft: #ecefe7;
+  --color-heading: var(--green-deep);
+  --color-text: var(--green-deep);
+  --color-text-muted: var(--sage);
+  --color-accent: var(--green);
+  --color-accent-dark: var(--green-hover);
+  --color-accent-bg: var(--mist);
+  --color-on-accent: #ffffff;
+  --color-focus: var(--green);
+  --color-scrollbar: #c9d2c0;
+  --color-error: #b0452f;
+  --color-error-bg: #fbefeb;
+  --color-error-border: #efcfc5;
+  --color-warning: #94661c;
 
-  --radius: 3px;
-  --radius-panel: 6px;
+  --radius: 8px;
+  --radius-panel: 12px;
+  --radius-card: 20px;
+
+  /* Margen lateral de las pantallas: 100px a 1280 de ancho, menos en ventanas angostas. */
+  --page-gutter: clamp(24px, 7.8vw, 100px);
 
   color: var(--color-text);
   background-color: var(--color-bg);
   font-family: var(--font-text);
-  font-size: 17px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.5;
   font-weight: 400;
 
   font-synthesis: none;
@@ -58,7 +62,7 @@
   box-sizing: border-box;
   /* Barras de scroll finas y del tema en vez de las blancas del sistema. */
   scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 html,
@@ -71,10 +75,7 @@ body {
 
 body {
   margin: 0;
-  /* Retícula técnica muy tenue en vez de grano: hoja cuadriculada de instrumento. */
-  background-image:
-    repeating-linear-gradient(to right, rgba(168, 220, 60, 0.035) 0 1px, transparent 1px 32px),
-    repeating-linear-gradient(to bottom, rgba(168, 220, 60, 0.035) 0 1px, transparent 1px 32px);
+  background: var(--color-bg);
 }
 
 #root {
@@ -86,7 +87,7 @@ h2,
 h3 {
   font-family: var(--font-display);
   font-weight: 700;
-  color: var(--color-accent-dark);
+  color: var(--color-heading);
 }
 
 input,
@@ -118,7 +119,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--lime);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 

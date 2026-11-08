@@ -182,9 +182,12 @@ export function parseStoredDevice(text: string, fileId: string): StoredDevice {
     const usedActuators = new Set<string>();
     sensorsUsed(rule.condition, usedSensors);
     actuatorsUsed(rule.condition, usedActuators);
-    for (const a of rule.actions) if (a.kind === "StateAction") usedActuators.add(a.actuator);
     if (![...usedSensors].every((s) => sensorIds.has(s))) continue;
     if (![...usedActuators].every((a) => actuatorIds.has(a))) continue;
+    // Lo que se enciende/apaga suele ser un equipo, pero el asistente también
+    // deja elegir un sensor a propósito (error I4/T8): basta con que exista.
+    const targets = rule.actions.flatMap((a) => (a.kind === "StateAction" ? [a.actuator] : []));
+    if (!targets.every((t) => actuatorIds.has(t) || sensorIds.has(t))) continue;
 
     let id = rule.id;
     for (let n = 2; ruleIds.has(id); n++) id = `${rule.id}-${n}`;
