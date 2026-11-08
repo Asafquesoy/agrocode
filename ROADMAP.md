@@ -12,9 +12,11 @@ Decisiones fijas (no re-litigar):
 - A fecha 2026-09-09 **no hay ESP32 físico disponible**; las fases que lo requieren están marcadas.
 - Propuestas alternativas de UI (Blockly, Tarjetas) fueron eliminadas — solo queda "Receta".
 - A fecha 2026-09-09 se decidió reemplazar el catálogo fijo de cultivos/sensores/actuadores por
-  registro libre del usuario, agregar persistencia de configuraciones de dispositivo y control
-  remoto — ver `ALCANCE.txt`. El descubrimiento automático de sensores por hardware y el monitor en
-  vivo por serial quedan fuera de alcance.
+  registro libre del usuario y agregar persistencia de configuraciones de dispositivo — ver
+  `ALCANCE.txt`. El descubrimiento automático de sensores por hardware y el monitor en vivo por
+  serial quedan fuera de alcance.
+- A fecha 2026-10-18 se **descartó el control remoto** (antes Fase 7): no habrá Wi-Fi ni red local
+  en el producto, porque el lugar de instalación no tendrá internet confiable.
 
 ## Fases
 
@@ -46,15 +48,10 @@ Decisiones fijas (no re-litigar):
 - [ ] **Fase 6 — Restricción horaria real.** Implementar de verdad la ventana horaria
       (`RestriccionHoraria`) en el analizador de tipos y en el C++ generado (hoy solo se emite como
       comentario); requiere RTC o sincronización de hora en el ESP32. **Requiere ESP32 físico.**
-- [ ] **Fase 7 — Control remoto de dispositivos.** Control **solo dentro de la misma red local**
-      (sin servidor en la nube, sin acceso por internet) y **sin autenticación**. La conexión del
-      dispositivo a la red debe ser un paso **simple y sin configuración técnica** para el agricultor
-      (nada de IPs, puertos o credenciales manuales). Definir el mecanismo de conectividad local
-      (Wi-Fi + MQTT/HTTP u otro), comandos para enviar cambios de configuración y accionar actuadores
-      a distancia, y la contraparte en la app para listar/controlar dispositivos en la red. Si se
-      pierde la comunicación, el dispositivo debe seguir operando con la última configuración que
-      tenía cargada y la app debe avisarle al usuario que se perdió la conexión.
-      **Requiere ESP32 físico con conectividad Wi-Fi.**
+- [~] **Fase 7 — Control remoto de dispositivos. DESCARTADA (2026-10-18).** Se quitó del proyecto:
+      donde se piensa instalar el dispositivo no se espera una red Wi-Fi confiable, así que el
+      control remoto no aporta. El dispositivo se configura y se carga por USB y opera solo con la
+      configuración cargada. No hay Wi-Fi, red local ni MQTT/HTTP en el alcance.
 - [ ] **Fase 8 — Pulido de interfaz y empaquetado.** Layout tipo mockup del PDF, arreglar sliders
       limitados a 0–100 y edición de AST que solo recorre la rama izquierda, `tauri.conf.json` de
       producción, build final. Nota (evidencia Tema 1, 2026-09-10): `NewRuleWizard.tsx` ya
