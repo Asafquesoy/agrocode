@@ -1,8 +1,7 @@
 # Roadmap — Agrocode
 
 Fuente de verdad de las fases de desarrollo, pensadas para implementarse por partes en sesiones
-distintas. El alcance objetivo (qué se incluye y qué queda deliberadamente fuera) está en
-`ALCANCE.txt`.
+distintas. Lo que queda deliberadamente fuera de alcance está en «Decisiones fijas».
 
 **Fase actual: 5 (completada) → siguiente: Fase 2** (orden acordado: 1 → 4 → 5; la Fase 2 después)
 
@@ -12,8 +11,7 @@ Decisiones fijas (no re-litigar):
 - A fecha 2026-09-09 **no hay ESP32 físico disponible**; las fases que lo requieren están marcadas.
 - Propuestas alternativas de UI (Blockly, Tarjetas) fueron eliminadas — solo queda "Receta".
 - A fecha 2026-09-09 se decidió reemplazar el catálogo fijo de cultivos/sensores/actuadores por
-  registro libre del usuario y agregar persistencia de configuraciones de dispositivo — ver
-  `ALCANCE.txt`. El descubrimiento automático de sensores por hardware y el monitor en vivo por
+  registro libre del usuario y agregar persistencia de configuraciones de dispositivo. El descubrimiento automático de sensores por hardware y el monitor en vivo por
   serial quedan fuera de alcance.
 - A fecha 2026-10-18 se **descartó el control remoto** (antes Fase 7): no habrá Wi-Fi ni red local
   en el producto, porque el lugar de instalación no tendrá internet confiable.

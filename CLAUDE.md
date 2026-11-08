@@ -14,8 +14,6 @@ Es una app de escritorio (Tauri + React + TypeScript), no una web app ni una CLI
 
 La interfaz vive en `src/recipe/`: el usuario elige un cultivo, ajusta una receta pre-armada con sliders y agrega reglas con un asistente.
 
-El alcance completo (funcionalidades incluidas y explícitamente fuera de esta versión) está en `ALCANCE.txt`.
-
 **Nota sobre estado actual vs. alcance objetivo:** el registro dinámico de cultivo, sensores y actuadores (Fase 4) ya está implementado: el agricultor los da de alta desde la UI (`src/recipe/DeviceSetup.tsx`) y el compilador trabaja contra ese registro (`device.ts`), no contra un catálogo fijo. La persistencia (Fase 5) también está hecha: cada dispositivo se guarda solo, con nombre propio, y reaparece en la lista inicial al abrir la app. El control remoto se descartó el 2026-10-18 (el lugar de instalación no tendrá internet confiable); ver `ROADMAP.md`.
 
 **El usuario final (agricultor) no tiene ni debe necesitar ningún conocimiento técnico.** Esto restringe cómo se implementa el registro dinámico:
