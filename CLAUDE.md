@@ -16,14 +16,13 @@ La interfaz vive en `src/recipe/`: el usuario elige un cultivo, ajusta una recet
 
 El alcance completo (funcionalidades incluidas y explícitamente fuera de esta versión) está en `ALCANCE.txt`.
 
-**Nota sobre estado actual vs. alcance objetivo:** el registro dinámico de cultivo, sensores y actuadores (Fase 4) ya está implementado: el agricultor los da de alta desde la UI (`src/recipe/DeviceSetup.tsx`) y el compilador trabaja contra ese registro (`device.ts`), no contra un catálogo fijo. La persistencia (Fase 5) también está hecha: cada dispositivo se guarda solo, con nombre propio, y reaparece en la lista inicial al abrir la app. Sigue pendiente el control remoto — ver `ROADMAP.md`.
+**Nota sobre estado actual vs. alcance objetivo:** el registro dinámico de cultivo, sensores y actuadores (Fase 4) ya está implementado: el agricultor los da de alta desde la UI (`src/recipe/DeviceSetup.tsx`) y el compilador trabaja contra ese registro (`device.ts`), no contra un catálogo fijo. La persistencia (Fase 5) también está hecha: cada dispositivo se guarda solo, con nombre propio, y reaparece en la lista inicial al abrir la app. El control remoto se descartó el 2026-10-18 (el lugar de instalación no tendrá internet confiable); ver `ROADMAP.md`.
 
-**El usuario final (agricultor) no tiene ni debe necesitar ningún conocimiento técnico.** Esto restringe cómo se implementa el registro dinámico y el control remoto:
+**El usuario final (agricultor) no tiene ni debe necesitar ningún conocimiento técnico.** Esto restringe cómo se implementa el registro dinámico:
 - La asignación del pin de ESP32 a cada sensor/actuador registrado debe ser **automática**, nunca algo que el agricultor tenga que elegir o entender.
 - Los conflictos de pines entre sensores/actuadores deben **detectarse y resolverse automáticamente** dentro del sistema, no exponerse como un problema que el agricultor deba diagnosticar.
-- Conectar el dispositivo a la red local para el control remoto debe ser un paso **sencillo, sin configuración técnica** (nada de IPs, puertos o credenciales manuales de red).
 
-El control remoto, cuando se implemente, es **solo dentro de la misma red local** (no hay servidor en la nube ni acceso por internet) y **sin autenticación**. Si se pierde la comunicación con el dispositivo, este continúa operando con la última configuración que tenía cargada y la app debe avisarle al usuario que se perdió la conexión.
+**No hay control remoto ni conectividad de red.** Se descartó (2026-10-18) porque donde se instalará el dispositivo no habrá internet confiable. El dispositivo se programa por USB y opera de forma autónoma con la configuración cargada; no agregar Wi-Fi, red local, MQTT/HTTP ni nada que dependa de red.
 
 Nota: el documento fuente "App para programar ESP32 agrícola.pdf" describe un stack tecnológico distinto al que realmente se usa aquí (propone Flutter/Dart) — se evaluó y se decidió **mantener Tauri + React + TypeScript** en vez de migrar, porque el núcleo del compilador ya funciona en TypeScript y Rust cubre el mismo rol que el PDF le da a Dart/Python (procesos hijo async, streaming de stdout, acceso a puerto serial). Ver `ROADMAP.md` para el plan de implementación por fases de lo que el PDF sí pide (compilar/flashear vía `arduino-cli`, detección de puerto, descubrimiento de sensores).
 
