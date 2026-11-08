@@ -40,3 +40,10 @@ src-tauri/gen/schemas
 *.pdf
 *.docx
 
+# Material del equipo (informes, presupuestos, guiones, iRing): no se sube al repositorio
+documentos/
+iRing/
+
+# Pruebas con Playwright (capturas y registros): no se suben
+.playwright-mcp/
+
